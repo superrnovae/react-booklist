@@ -7,6 +7,7 @@ export * from './ListeLivres';
 export * from './LivreCarte';
 export * from './mutations';
 export * from './queries';
+export * from './useActionsLivre';
 export * from './useEnrichissement';
 export * from './useSuppressionAnnulable';
 

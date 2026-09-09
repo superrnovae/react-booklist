@@ -3,29 +3,9 @@
  * mise à jour optimiste sur la bascule lu/favori avec retour arrière.
  */
 import type { Livre, SaisieLivre } from '@/domain/types';
-import { creerLivre, modifierLivre, remplacerLivre, supprimerLivre } from '@/services/api/livres';
+import { modifierLivre, supprimerLivre } from '@/services/api/livres';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { clesLivres } from './cles';
-
-export function useCreerLivre() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (saisie: SaisieLivre) => creerLivre(saisie),
-    onSuccess: () => qc.invalidateQueries({ queryKey: clesLivres.listes() }),
-  });
-}
-
-export function useEnregistrerLivre(id: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ saisie, version }: { saisie: SaisieLivre; version: number }) =>
-      remplacerLivre(id, saisie, version),
-    onSuccess: (livre) => {
-      qc.setQueryData(clesLivres.detail(id), livre);
-      void qc.invalidateQueries({ queryKey: clesLivres.listes() });
-    },
-  });
-}
 
 export function useSupprimerLivre() {
   const qc = useQueryClient();
