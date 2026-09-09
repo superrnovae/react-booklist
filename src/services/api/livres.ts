@@ -17,6 +17,16 @@ function chaineRequete(req: RequeteLivres): string {
   return p.toString();
 }
 
+/**
+ * Prépare le corps d'écriture. L'API n'accepte pas `couverture: null` (elle
+ * exige une chaîne quand le champ est présent) : on l'omet plutôt que d'envoyer
+ * null, ce qui déclencherait un 422. Détail de contrat, donc traité ici.
+ */
+export function corpsLivre<T extends Partial<SaisieLivre>>(saisie: T): Partial<SaisieLivre> {
+  const { couverture, ...reste } = saisie;
+  return couverture == null ? reste : { ...reste, couverture };
+}
+
 export function listerLivres(req: RequeteLivres, signal?: AbortSignal): Promise<Page<Livre>> {
   return requete(`/books?${chaineRequete(req)}`, { schema: pageLivresSchema, signal });
 }
@@ -26,14 +36,14 @@ export function obtenirLivre(id: string, signal?: AbortSignal): Promise<Livre> {
 }
 
 export function creerLivre(saisie: SaisieLivre): Promise<Livre> {
-  return requete('/books', { methode: 'POST', corps: saisie, schema: livreSchema });
+  return requete('/books', { methode: 'POST', corps: corpsLivre(saisie), schema: livreSchema });
 }
 
 /** Remplacement complet (PUT) avec détection de conflit via If-Match. */
 export function remplacerLivre(id: string, livre: SaisieLivre, version: number): Promise<Livre> {
   return requete(`/books/${id}`, {
     methode: 'PUT',
-    corps: livre,
+    corps: corpsLivre(livre),
     ifMatch: version,
     schema: livreSchema,
   });
@@ -47,7 +57,7 @@ export function modifierLivre(
 ): Promise<Livre> {
   return requete(`/books/${id}`, {
     methode: 'PATCH',
-    corps: partiel,
+    corps: corpsLivre(partiel),
     ifMatch: version,
     schema: livreSchema,
   });

@@ -37,3 +37,17 @@ De plus, le `seed` génère des ouvrages dont le champ `couverture` vaut `null`.
 Si une version corrigée de l'API ajoute ces routes, aucun changement de
 conception n'est nécessaire côté client : il suffira d'ajouter l'endpoint et le
 sélecteur de fichier.
+
+## `POST`/`PUT /books` rejette `couverture: null` (422)
+
+Le validateur `validerLivre` (`api-books-v2/src/livres.js`) traite `couverture`
+comme un champ texte : si la clé est **présente**, il exige une chaîne. Envoyer
+`couverture: null` (cas normal d'un ouvrage sans couverture) déclenche donc un
+`422 { champs: { couverture: "doit etre une chaine" } }`, alors que l'omission du
+champ est acceptée.
+
+Découvert via le test E2E de création d'ouvrage. **Correctif côté client**
+(sans toucher l'API) : la couche `services/api/livres.ts` (`corpsLivre`) **omet**
+`couverture` du corps lorsqu'elle vaut `null`, pour la création, le remplacement,
+la modification partielle et la synchronisation par lot. Couvert par un test
+unitaire.

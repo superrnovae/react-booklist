@@ -1,6 +1,6 @@
 import type { MutationCreation, MutationMaj } from '@/domain/mutations';
 import type { Livre } from '@/domain/types';
-import { ajouterNote, creerLivre, listerLivres, modifierLivre, supprimerLivre } from '@/services/api/livres';
+import { ajouterNote, corpsLivre, creerLivre, listerLivres, modifierLivre, supprimerLivre } from '@/services/api/livres';
 import { synchroniser } from '@/services/api/sync';
 
 const livre: Livre = {
@@ -77,6 +77,9 @@ describe('endpoints livres', () => {
       couverture: null,
     });
     expect(optionsAppelees().method).toBe('POST');
+    // L'API rejette `couverture: null` : le champ doit être omis du corps.
+    const corps = JSON.parse(optionsAppelees().body as string);
+    expect('couverture' in corps).toBe(false);
   });
 
   it('modifierLivre envoie l\'en-tête If-Match pour la détection de conflit', async () => {
@@ -99,6 +102,18 @@ describe('endpoints livres', () => {
     );
     const note = await ajouterNote('l1', 'super');
     expect(note.contenu).toBe('super');
+  });
+});
+
+describe('corpsLivre', () => {
+  it('omet couverture quand elle est null', () => {
+    expect(corpsLivre({ titre: 'T', couverture: null })).toEqual({ titre: 'T' });
+  });
+  it('conserve une couverture non nulle', () => {
+    expect(corpsLivre({ titre: 'T', couverture: '/covers/x.svg' })).toEqual({
+      titre: 'T',
+      couverture: '/covers/x.svg',
+    });
   });
 });
 
