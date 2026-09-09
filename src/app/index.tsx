@@ -31,6 +31,14 @@ export default function EcranFonds() {
             <View style={styles.actions}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('stats.titre')}
+                onPress={() => router.push('/stats')}
+                hitSlop={8}
+              >
+                <Texte style={styles.icone}>📊</Texte>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
                 accessibilityLabel={t('reglages.titre')}
                 onPress={() => router.push('/reglages')}
                 hitSlop={8}
