@@ -14,13 +14,13 @@ import {
 import { ErreurReseau } from '@/domain/erreurs';
 import type { Livre } from '@/domain/types';
 import {
+    BlocEnrichissement,
     useBasculeChamp,
     useLivre,
     useNoterLivre,
     useSuppressionAnnulable,
 } from '@/features/books';
 import { confirmer } from '@/features/ui/confirmer';
-import { BlocEnrichissement } from '@/features/books';
 import { useAuth } from '@/features/auth';
 import { SectionNotes } from '@/features/notes';
 import { resoudreCouverture } from '@/services/couverture';

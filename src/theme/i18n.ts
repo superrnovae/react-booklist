@@ -2,6 +2,7 @@
  * Internationalisation fr/en (§ Lot 3) : bascule à chaud, persistance,
  * langue système par défaut. Les formats de date/nombre suivent la langue.
  */
+/* eslint-disable import/no-named-as-default-member -- i18n est l'instance i18next, .use/.changeLanguage attendus */
 import { ecrireJson, lireJson } from '@/services/stockage';
 import { getLocales } from 'expo-localization';
 import i18n from 'i18next';

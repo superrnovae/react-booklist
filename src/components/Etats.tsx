@@ -5,7 +5,7 @@
  */
 import { usePalette } from '@/theme/ThemeProvider';
 import { espacements, rayons } from '@/theme/tokens';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { Bouton } from './Bouton';
 import { Texte } from './Texte';
@@ -13,7 +13,7 @@ import { Texte } from './Texte';
 /** Bloc squelette pulsant, utilisé pour composer des écrans de chargement. */
 export function Squelette({ hauteur = 16, largeur = '100%' as number | string, radius = rayons.sm }) {
   const palette = usePalette();
-  const opacite = useRef(new Animated.Value(0.4)).current;
+  const [opacite] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
     const boucle = Animated.loop(

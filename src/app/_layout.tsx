@@ -1,5 +1,4 @@
 import '@/global.css';
-import '@/theme/i18n';
 
 import { View } from 'react-native';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';

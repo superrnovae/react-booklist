@@ -39,7 +39,10 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
   const [conflits, setConflits] = useState<Conflit[]>([]);
   const enCours = useRef(false);
   const fileRef = useRef<Mutation[]>([]);
-  fileRef.current = file;
+
+  useEffect(() => {
+    fileRef.current = file;
+  }, [file]);
 
   const lancerSync = useCallback(async () => {
     if (enCours.current) return;

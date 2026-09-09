@@ -3,8 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Bouton, Carte, EtatVide, Texte } from '@/components';
-import type { Conflit } from '@/domain/sync';
-import { champsEnConflit, type ChampCompare } from '@/domain/sync';
+import { champsEnConflit, type ChampCompare, type Conflit } from '@/domain/sync';
 import type { Livre, SaisieLivre } from '@/domain/types';
 import { useSync } from '@/features/sync';
 import { useSnackbar } from '@/features/ui/Snackbar';
