@@ -54,3 +54,6 @@ example
 
 # logs
 *.log
+
+# web export
+/dist/
