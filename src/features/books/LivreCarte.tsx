@@ -4,6 +4,7 @@
  */
 import { Coeur, CouvertureImage, Texte } from '@/components';
 import type { Livre } from '@/domain/types';
+import { useAuth } from '@/features/auth';
 import { resoudreCouverture } from '@/services/couverture';
 import { usePalette } from '@/theme/ThemeProvider';
 import { useI18n } from '@/theme/formats';
@@ -11,7 +12,6 @@ import { espacements, rayons } from '@/theme/tokens';
 import { memo, useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useBasculeChamp } from './mutations';
-import { useAuth } from '@/features/auth';
 
 type Props = { livre: Livre; onOuvrir: (id: string) => void };
 
@@ -26,6 +26,7 @@ function LivreCarteBrut({ livre, onOuvrir }: Props) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${livre.titre}, ${livre.auteur}`}
+      testID="livre-carte"
       onPress={ouvrir}
       style={({ pressed }) => [
         styles.ligne,

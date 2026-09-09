@@ -84,6 +84,7 @@ function BarreRechercheBrut({ filtres, onChange }: Props) {
         placeholder={t('filtres.recherche')}
         placeholderTextColor={palette.texteSecondaire}
         accessibilityLabel={t('filtres.recherche')}
+        testID="recherche"
         style={[styles.recherche, { color: palette.texte, backgroundColor: palette.surface, borderColor: palette.bordure }]}
         returnKeyType="search"
       />

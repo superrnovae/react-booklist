@@ -77,6 +77,7 @@ export function FormulaireLivre({
             <Champ
               libelle={t(`livre.${cle}`)}
               erreur={messageErreur(cle)}
+              testID={`champ-${cle}`}
               value={cle === 'annee' ? String(field.value ?? '') : (field.value as string)}
               keyboardType={cle === 'annee' ? 'number-pad' : 'default'}
               onChangeText={(txt) =>
@@ -127,6 +128,7 @@ export function FormulaireLivre({
         onPress={soumettre}
         enCours={enCours}
         desactive={formState.isSubmitting}
+        testID="soumettre-livre"
         style={styles.action}
       />
     </View>

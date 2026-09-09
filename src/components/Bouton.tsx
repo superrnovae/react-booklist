@@ -16,6 +16,7 @@ type Props = {
   enCours?: boolean;
   desactive?: boolean;
   libelleA11y?: string;
+  testID?: string;
   style?: ViewStyle;
 };
 
@@ -26,6 +27,7 @@ export function Bouton({
   enCours = false,
   desactive = false,
   libelleA11y,
+  testID,
   style,
 }: Props) {
   const palette = usePalette();
@@ -49,6 +51,7 @@ export function Bouton({
       accessibilityRole="button"
       accessibilityLabel={libelleA11y ?? titre}
       accessibilityState={{ disabled: inactif, busy: enCours }}
+      testID={testID}
       disabled={inactif}
       onPress={onPress}
       style={({ pressed }) => [

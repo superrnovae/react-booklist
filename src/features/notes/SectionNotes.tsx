@@ -26,7 +26,7 @@ export function SectionNotes({ livreId, lectureSeule = false }: { livreId: strin
   };
 
   return (
-    <View style={styles.section}>
+    <View style={styles.section} testID="section-notes">
       <Texte variante="sousTitre">{t('notes.titre')}</Texte>
 
       {lectureSeule ? null : (

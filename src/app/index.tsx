@@ -1,12 +1,12 @@
-import { useRouter, Stack } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { BarreRecherche, ListeLivres, type EtatFiltres } from '@/features/books';
-import { useAuth } from '@/features/auth';
 import { Texte } from '@/components';
-import { espacements } from '@/theme/tokens';
+import { useAuth } from '@/features/auth';
+import { BarreRecherche, ListeLivres, type EtatFiltres } from '@/features/books';
 import { useI18n } from '@/theme/formats';
+import { espacements } from '@/theme/tokens';
 
 export default function EcranFonds() {
   const router = useRouter();
@@ -51,6 +51,7 @@ export default function EcranFonds() {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={t('livre.nouveau')}
+                  testID="ajouter-livre"
                   onPress={() => router.push('/livre/nouveau')}
                   hitSlop={8}
                 >
