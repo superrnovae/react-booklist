@@ -30,3 +30,43 @@ jobs:
 
       - name: Tests + couverture
         run: npm run test:coverage -- --ci
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install app dependencies
+        run: npm ci
+
+      - name: Install API dependencies
+        working-directory: api-books-v2
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Seed and start API
+        working-directory: api-books-v2
+        run: |
+          npm run seed
+          node src/server.js &
+          npx wait-on http://localhost:3000/health
+
+      - name: Run E2E (Playwright starts the web server)
+        run: npm run e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

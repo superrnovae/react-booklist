@@ -46,17 +46,17 @@ cliente de l'API `api-books-v2`. Sujet complet : `SPECIFICATION.md`.
 - [x] Lot 2 (notes, favori optimiste, recherche/filtres/tri serveur, scroll infini, debounce, a11y)
 - [x] Lot 3 (note étoiles, couvertures+repli, OpenLibrary, thème clair/sombre, i18n, perf)
 - [x] Lot 4 (auth+intercepteur single-flight, cache persistant, file mutations offline, sync idempotent, conflits assistés, dashboard offline)
-- [x] Lot 5 partiel (CI GitHub Actions lint/typecheck/tests + badge)
-
-## Points clés d'implémentation
-- Intercepteur/refresh single-flight : `features/auth/session.ts` (`rafraichir`), branché via `definirFournisseurAuth` dans `AuthProvider`.
-- File de mutations offline : `domain/mutations.ts` (fusion pure) + `features/sync/` (persistance, orchestration, indicateur).
-- Résolution de conflits : `domain/sync.ts` (pur, testé) + `app/conflits.tsx` (fusion assistée).
-- Couvertures : `/covers` absent de l'API fournie → repli via `CouvertureImage` (voir `docs/API-ECARTS.md`).
+- [x] Lot 5 partiel (CI GitHub Actions lint/typecheck/tests + E2E Playwright + badge)
 
 ## Tests
-`npm test` — 64 tests verts (domain, services, auth single-flight, 4 composants RTL, 1 hook).
+`npm test` — 68 tests Jest verts (domain, services, auth single-flight, form resolver, composants RTL, hook).
+`npm run e2e` — 2 tests Playwright (parcours critique : liste→recherche→fiche, et création d'ouvrage).
+E2E prérequis : API (`:3000`) + web (`:8081`) démarrés ; Playwright réutilise un serveur lancé.
 RTL 14 : `render`/`renderHook` sont **async** (await). Lint 0 erreur, tsc 0 erreur.
+
+## Bugs API contournés côté client (API non modifiée)
+- `/covers`, `/books/:id/cover`, `/media` absents → repli image (`docs/API-ECARTS.md`).
+- `POST/PUT /books` rejette `couverture: null` (422) → `services/api/livres.ts::corpsLivre` omet le champ null (création, PUT, PATCH, sync). Découvert par l'E2E.
 
 ## Conventions Git
 Commits conventionnels : `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Un commit par fonctionnalité/fix.

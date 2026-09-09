@@ -45,6 +45,7 @@ EXPO_PUBLIC_API_URL=http://localhost:3000
 | `npm run web` | Lance l'app sur navigateur |
 | `npm test` | Tests unitaires et composants (Jest) |
 | `npm run test:coverage` | Tests + couverture |
+| `npm run e2e` | Tests de bout en bout (Playwright, cible navigateur) |
 | `npm run typecheck` | Vérification TypeScript (`tsc --noEmit`) |
 | `npm run lint` | Lint Expo |
 
@@ -84,6 +85,16 @@ Règle vérifiée : **aucun `fetch` ni URL en dur** hors de `services/`.
 - Quatre états sur chaque écran de données : chargement (squelette), erreur,
   vide contextualisé, succès.
 - Thème clair/sombre et interface bilingue fr/en, sans couleur ni chaîne en dur.
+
+## Tests
+
+Unitaires/composants avec **Jest** (`npm test`) ; bout en bout avec **Playwright**
+(`npm run e2e`).
+
+Le parcours critique E2E (`e2e/parcours-critique.spec.ts`) couvre : chargement de
+la liste paginée, recherche serveur, ouverture d'une fiche, et création d'un
+ouvrage de bout en bout. Prérequis : l'API et l'app web démarrées (voir plus haut) ;
+Playwright réutilise un serveur déjà lancé.
 
 ## État des lots livrés
 
