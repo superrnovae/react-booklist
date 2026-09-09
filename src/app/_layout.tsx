@@ -1,7 +1,7 @@
 import '@/global.css';
 import '@/theme/i18n';
 
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -10,11 +10,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBoundary } from '@/components';
 import { queryClient } from '@/features/query/client';
+import { creerPersister } from '@/features/query/persister';
 import { FournisseurSnackbar } from '@/features/ui/Snackbar';
 import { restaurerLangue } from '@/theme/i18n';
 import { FournisseurTheme, usePalette, useTheme } from '@/theme/ThemeProvider';
 
 void SplashScreen.preventAutoHideAsync();
+
+const persister = creerPersister();
 
 function Navigation() {
   const palette = usePalette();
@@ -41,7 +44,10 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+      >
         <FournisseurTheme>
           <FournisseurSnackbar>
             <ErrorBoundary>
@@ -49,7 +55,7 @@ export default function RootLayout() {
             </ErrorBoundary>
           </FournisseurSnackbar>
         </FournisseurTheme>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </SafeAreaProvider>
   );
 }
