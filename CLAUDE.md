@@ -40,9 +40,13 @@ cliente de l'API `api-books-v2`. Sujet complet : `SPECIFICATION.md`.
 ## État d'avancement
 - [x] API vérifiée (install/seed/health)
 - [x] Git réinitialisé (repo neuf, commits atomiques)
-- [ ] Dépendances client
-- [ ] Fondations (domain / services / theme)
+- [x] Dépendances client
+- [x] Fondations: domain (types, erreurs, tri, mutations, sync) + services (client HTTP zod, endpoints, abstractions) + theme/i18n
 - [ ] Lot 1 · Lot 2 · Lot 3 · Lot 4 · Lot 5
+
+## Tests
+`npm test` — domain (mutations, sync, tri) + services (client, erreurs-http, couverture). 38 tests verts.
+Couverture visée ≥40% sur domain/ et services/.
 
 ## Conventions Git
 Commits conventionnels : `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Un commit par fonctionnalité/fix.
