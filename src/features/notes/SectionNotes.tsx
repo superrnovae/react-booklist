@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { useAjouterNote, useNotes, useSupprimerNote } from './hooks';
 
-export function SectionNotes({ livreId }: { livreId: string }) {
+export function SectionNotes({ livreId, lectureSeule = false }: { livreId: string; lectureSeule?: boolean }) {
   const palette = usePalette();
   const { t, formaterDate } = useI18n();
   const q = useNotes(livreId);
@@ -29,26 +29,28 @@ export function SectionNotes({ livreId }: { livreId: string }) {
     <View style={styles.section}>
       <Texte variante="sousTitre">{t('notes.titre')}</Texte>
 
-      <Carte style={styles.saisie}>
-        <Texte variante="legende" couleur="texteSecondaire">
-          {t('notes.champ')}
-        </Texte>
-        <TextInput
-          value={texte}
-          onChangeText={setTexte}
-          placeholder={t('notes.placeholder')}
-          placeholderTextColor={palette.texteSecondaire}
-          multiline
-          accessibilityLabel={t('notes.champ')}
-          style={[styles.zone, { color: palette.texte, borderColor: palette.bordure }]}
-        />
-        <Bouton
-          titre={t('notes.ajouter')}
-          onPress={soumettre}
-          enCours={ajouter.isPending}
-          desactive={texte.trim().length === 0}
-        />
-      </Carte>
+      {lectureSeule ? null : (
+        <Carte style={styles.saisie}>
+          <Texte variante="legende" couleur="texteSecondaire">
+            {t('notes.champ')}
+          </Texte>
+          <TextInput
+            value={texte}
+            onChangeText={setTexte}
+            placeholder={t('notes.placeholder')}
+            placeholderTextColor={palette.texteSecondaire}
+            multiline
+            accessibilityLabel={t('notes.champ')}
+            style={[styles.zone, { color: palette.texte, borderColor: palette.bordure }]}
+          />
+          <Bouton
+            titre={t('notes.ajouter')}
+            onPress={soumettre}
+            enCours={ajouter.isPending}
+            desactive={texte.trim().length === 0}
+          />
+        </Carte>
+      )}
 
       {q.isLoading ? (
         <View style={styles.chargement}>
@@ -73,12 +75,14 @@ export function SectionNotes({ livreId }: { livreId: string }) {
                 <Texte variante="legende" couleur="texteSecondaire">
                   {formaterDate(note.createdAt)}
                 </Texte>
-                <Bouton
-                  titre={t('actions.supprimer')}
-                  onPress={() => supprimer.mutate(note.id)}
-                  variante="fantome"
-                  style={styles.suppr}
-                />
+                {lectureSeule ? null : (
+                  <Bouton
+                    titre={t('actions.supprimer')}
+                    onPress={() => supprimer.mutate(note.id)}
+                    variante="fantome"
+                    style={styles.suppr}
+                  />
+                )}
               </View>
             </Carte>
           ))}

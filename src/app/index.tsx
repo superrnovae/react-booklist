@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useCallback, useState } from 'react';
 
 import { BarreRecherche, ListeLivres, type EtatFiltres } from '@/features/books';
+import { useAuth } from '@/features/auth';
 import { Texte } from '@/components';
 import { espacements } from '@/theme/tokens';
 import { useI18n } from '@/theme/formats';
@@ -10,6 +11,7 @@ import { useI18n } from '@/theme/formats';
 export default function EcranFonds() {
   const router = useRouter();
   const { t } = useI18n();
+  const { peutEcrire } = useAuth();
   const [filtres, setFiltres] = useState<EtatFiltres>({ sort: 'titre', order: 'asc' });
 
   const ouvrir = useCallback(
@@ -45,16 +47,18 @@ export default function EcranFonds() {
               >
                 <Texte style={styles.icone}>⚙︎</Texte>
               </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('livre.nouveau')}
-                onPress={() => router.push('/livre/nouveau')}
-                hitSlop={8}
-              >
-                <Texte couleur="primaire" variante="sousTitre">
-                  ＋ {t('actions.ajouter')}
-                </Texte>
-              </Pressable>
+              {peutEcrire ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('livre.nouveau')}
+                  onPress={() => router.push('/livre/nouveau')}
+                  hitSlop={8}
+                >
+                  <Texte couleur="primaire" variante="sousTitre">
+                    ＋ {t('actions.ajouter')}
+                  </Texte>
+                </Pressable>
+              ) : null}
             </View>
           ),
         }}

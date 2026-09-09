@@ -11,12 +11,14 @@ import { espacements, rayons } from '@/theme/tokens';
 import { memo, useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useBasculeChamp } from './mutations';
+import { useAuth } from '@/features/auth';
 
 type Props = { livre: Livre; onOuvrir: (id: string) => void };
 
 function LivreCarteBrut({ livre, onOuvrir }: Props) {
   const palette = usePalette();
   const { t } = useI18n();
+  const { peutEcrire } = useAuth();
   const favori = useBasculeChamp(livre, 'favori');
   const ouvrir = useCallback(() => onOuvrir(livre.id), [onOuvrir, livre.id]);
 
@@ -51,11 +53,9 @@ function LivreCarteBrut({ livre, onOuvrir }: Props) {
           ) : null}
         </View>
       </View>
-      <Coeur
-        actif={livre.favori}
-        onToggle={() => favori.mutate()}
-        libelle={t('livre.favori')}
-      />
+      {peutEcrire ? (
+        <Coeur actif={livre.favori} onToggle={() => favori.mutate()} libelle={t('livre.favori')} />
+      ) : null}
     </Pressable>
   );
 }

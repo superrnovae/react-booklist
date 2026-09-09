@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Carte, Texte } from '@/components';
+import { Bouton, Carte, Texte } from '@/components';
+import { useAuth } from '@/features/auth';
 import { usePalette, useTheme, type ModeTheme } from '@/theme/ThemeProvider';
 import { useI18n } from '@/theme/formats';
 import { changerLangue, type Langue } from '@/theme/i18n';
@@ -44,10 +45,21 @@ function Choix<T extends string>({
 export default function EcranReglages() {
   const { mode, definirMode } = useTheme();
   const { t, langue } = useI18n();
+  const { utilisateur, authRequise, deconnexion } = useAuth();
 
   return (
     <ScrollView contentContainerStyle={styles.contenu}>
       <Stack.Screen options={{ title: t('reglages.titre') }} />
+
+      {authRequise && utilisateur ? (
+        <Carte style={styles.carte}>
+          <Texte variante="sousTitre">{utilisateur.email}</Texte>
+          <Texte variante="legende" couleur="texteSecondaire">
+            {utilisateur.role === 'editeur' ? t('auth.editeur') : t('auth.lecteur')}
+          </Texte>
+          <Bouton titre={t('auth.seDeconnecter')} onPress={() => void deconnexion()} variante="danger" />
+        </Carte>
+      ) : null}
 
       <Carte style={styles.carte}>
         <Texte variante="sousTitre">{t('reglages.theme')}</Texte>

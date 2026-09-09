@@ -21,6 +21,7 @@ import {
 } from '@/features/books';
 import { confirmer } from '@/features/ui/confirmer';
 import { BlocEnrichissement } from '@/features/books';
+import { useAuth } from '@/features/auth';
 import { SectionNotes } from '@/features/notes';
 import { resoudreCouverture } from '@/services/couverture';
 import { useI18n } from '@/theme/formats';
@@ -82,6 +83,7 @@ function Fiche({
   dateLabel: string;
 }) {
   const { t } = useI18n();
+  const { peutEcrire } = useAuth();
   const lu = useBasculeChamp(livre, 'lu');
   const favori = useBasculeChamp(livre, 'favori');
   const noter = useNoterLivre(livre);
@@ -114,32 +116,41 @@ function Fiche({
           <View style={styles.ligneCoeur}>
             <Coeur actif={livre.favori} onToggle={() => favori.mutate()} libelle={t('livre.favori')} />
           </View>
-          <EtoilesNote valeur={livre.note} onChange={(n) => noter.mutate(n)} libelle={t('livre.note')} taille={24} />
+          <EtoilesNote
+            valeur={livre.note}
+            onChange={peutEcrire ? (n) => noter.mutate(n) : undefined}
+            libelle={t('livre.note')}
+            taille={24}
+          />
           <BlocEnrichissement titre={livre.titre} />
         </View>
       </View>
 
-      <Bouton
-        titre={livre.lu ? t('livre.marquerNonLu') : t('livre.marquerLu')}
-        onPress={() => lu.mutate()}
-        variante="secondaire"
-      />
+      {peutEcrire ? (
+        <Bouton
+          titre={livre.lu ? t('livre.marquerNonLu') : t('livre.marquerLu')}
+          onPress={() => lu.mutate()}
+          variante="secondaire"
+        />
+      ) : null}
 
       <Texte variante="legende" couleur="texteSecondaire">
         {t('stats.majLe', { date: dateLabel })}
       </Texte>
 
-      <View style={styles.actions}>
-        <Bouton titre={t('actions.modifier')} onPress={onModifier} style={styles.flex} />
-        <Bouton
-          titre={t('actions.supprimer')}
-          onPress={demanderSuppression}
-          variante="danger"
-          style={styles.flex}
-        />
-      </View>
+      {peutEcrire ? (
+        <View style={styles.actions}>
+          <Bouton titre={t('actions.modifier')} onPress={onModifier} style={styles.flex} />
+          <Bouton
+            titre={t('actions.supprimer')}
+            onPress={demanderSuppression}
+            variante="danger"
+            style={styles.flex}
+          />
+        </View>
+      ) : null}
 
-      <SectionNotes livreId={livre.id} />
+      <SectionNotes livreId={livre.id} lectureSeule={!peutEcrire} />
     </View>
   );
 }
