@@ -1,5 +1,6 @@
 export * from './cles';
 export * from './form';
+export * from './BarreRecherche';
 export * from './FormulaireLivre';
 export * from './ListeLivres';
 export * from './LivreCarte';
