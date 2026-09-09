@@ -44,14 +44,19 @@ cliente de l'API `api-books-v2`. Sujet complet : `SPECIFICATION.md`.
 - [x] Fondations: domain + services + theme/i18n
 - [x] Lot 1 (CRUD, pagination, 4 états, undo delete, form RHF+zod, TanStack Query)
 - [x] Lot 2 (notes, favori optimiste, recherche/filtres/tri serveur, scroll infini, debounce, a11y)
-- [x] Documentation: README, ARCHITECTURE, ADR 001-004, PERFORMANCE, IA.md
-- [ ] Lot 3 (couvertures upload, OpenLibrary, note étoiles, perf doc) — thème/i18n déjà faits
-- [ ] Lot 4 (auth+intercepteur, offline queue, sync, conflits, dashboard)
-- [ ] Lot 5 (CI, e2e, deploy)
+- [x] Lot 3 (note étoiles, couvertures+repli, OpenLibrary, thème clair/sombre, i18n, perf)
+- [x] Lot 4 (auth+intercepteur single-flight, cache persistant, file mutations offline, sync idempotent, conflits assistés, dashboard offline)
+- [x] Lot 5 partiel (CI GitHub Actions lint/typecheck/tests + badge)
+
+## Points clés d'implémentation
+- Intercepteur/refresh single-flight : `features/auth/session.ts` (`rafraichir`), branché via `definirFournisseurAuth` dans `AuthProvider`.
+- File de mutations offline : `domain/mutations.ts` (fusion pure) + `features/sync/` (persistance, orchestration, indicateur).
+- Résolution de conflits : `domain/sync.ts` (pur, testé) + `app/conflits.tsx` (fusion assistée).
+- Couvertures : `/covers` absent de l'API fournie → repli via `CouvertureImage` (voir `docs/API-ECARTS.md`).
 
 ## Tests
-`npm test` — 56 tests verts (domain, services, 3 composants RTL, 1 hook mock fetch).
-RTL 14 : `render`/`renderHook` sont **async** (await). Couverture domain 94%, global ~78%.
+`npm test` — 64 tests verts (domain, services, auth single-flight, 4 composants RTL, 1 hook).
+RTL 14 : `render`/`renderHook` sont **async** (await). Lint 0 erreur, tsc 0 erreur.
 
 ## Conventions Git
 Commits conventionnels : `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Un commit par fonctionnalité/fix.

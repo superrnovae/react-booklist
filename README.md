@@ -91,7 +91,20 @@ Règle vérifiée : **aucun `fetch` ni URL en dur** hors de `services/`.
   formulaire react-hook-form + zod, TanStack Query.
 - **Lot 2** — Notes de lecture, coups de cœur optimistes, recherche/filtres/tri
   serveur, défilement infini, anti-rebond 300 ms, accessibilité.
-- **Lot 3 / 4** — voir `docs/ADR/` pour les décisions et l'état d'avancement.
+- **Lot 3** — Note en étoiles (0–5), couvertures avec repli (jamais d'image
+  cassée), enrichissement OpenLibrary (cache/timeout, dégradation silencieuse),
+  thème clair/sombre persistant, interface bilingue fr/en, doc de performance.
+- **Lot 4** — Authentification + rôles, intercepteur unique à rafraîchissement
+  **single-flight**, routes protégées, cache persistant + **file de mutations
+  hors ligne** rejouée via `POST /sync` (idempotente), indicateur de
+  synchronisation permanent, **résolution de conflits assistée** champ par champ,
+  tableau de bord consultable hors ligne.
+- **Lot 5** — Intégration continue GitHub Actions (lint, typecheck, tests) avec
+  badge. E2E et déploiement web : voir la CI et `docs/`.
+
+> Note : l'API fournie n'implémente pas les routes de couverture décrites dans son
+> annexe (voir `docs/API-ECARTS.md`) ; l'affichage dégrade proprement et l'upload
+> n'est pas branché sur une route inexistante.
 
 ## Documentation
 
