@@ -7,6 +7,7 @@ import {
     CouvertureImage,
     EtatErreur,
     EtatVide,
+    EtoilesNote,
     Squelette,
     Texte,
 } from '@/components';
@@ -15,9 +16,11 @@ import type { Livre } from '@/domain/types';
 import {
     useBasculeChamp,
     useLivre,
+    useNoterLivre,
     useSuppressionAnnulable,
 } from '@/features/books';
 import { confirmer } from '@/features/ui/confirmer';
+import { BlocEnrichissement } from '@/features/books';
 import { SectionNotes } from '@/features/notes';
 import { resoudreCouverture } from '@/services/couverture';
 import { useI18n } from '@/theme/formats';
@@ -81,6 +84,7 @@ function Fiche({
   const { t } = useI18n();
   const lu = useBasculeChamp(livre, 'lu');
   const favori = useBasculeChamp(livre, 'favori');
+  const noter = useNoterLivre(livre);
   const supprimer = useSuppressionAnnulable();
 
   const demanderSuppression = async () => {
@@ -109,8 +113,9 @@ function Fiche({
           <Texte couleur="texteSecondaire">{livre.annee}</Texte>
           <View style={styles.ligneCoeur}>
             <Coeur actif={livre.favori} onToggle={() => favori.mutate()} libelle={t('livre.favori')} />
-            {livre.note !== null ? <Texte couleur="texteSecondaire">★ {livre.note}/5</Texte> : null}
           </View>
+          <EtoilesNote valeur={livre.note} onChange={(n) => noter.mutate(n)} libelle={t('livre.note')} taille={24} />
+          <BlocEnrichissement titre={livre.titre} />
         </View>
       </View>
 
