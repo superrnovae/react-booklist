@@ -18,6 +18,7 @@ import {
     useSuppressionAnnulable,
 } from '@/features/books';
 import { confirmer } from '@/features/ui/confirmer';
+import { SectionNotes } from '@/features/notes';
 import { resoudreCouverture } from '@/services/couverture';
 import { useI18n } from '@/theme/formats';
 import { espacements } from '@/theme/tokens';
@@ -132,6 +133,8 @@ function Fiche({
           style={styles.flex}
         />
       </View>
+
+      <SectionNotes livreId={livre.id} />
     </View>
   );
 }
