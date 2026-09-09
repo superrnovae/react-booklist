@@ -1,0 +1,13 @@
+# Déploiement Netlify de l'export web Expo.
+# L'URL de l'API est injectée au build (variable publique, aucun secret).
+# Définissez EXPO_PUBLIC_API_URL dans les variables d'environnement du site Netlify.
+
+[build]
+  command = "npm ci && npm run export:web"
+  publish = "dist"
+
+# Repli SPA : toutes les routes non-fichiers servent l'app (routing côté client).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

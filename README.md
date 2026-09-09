@@ -46,6 +46,7 @@ EXPO_PUBLIC_API_URL=http://localhost:3000
 | `npm test` | Tests unitaires et composants (Jest) |
 | `npm run test:coverage` | Tests + couverture |
 | `npm run e2e` | Tests de bout en bout (Playwright, cible navigateur) |
+| `npm run export:web` | Génère l'export web statique dans `dist/` |
 | `npm run typecheck` | Vérification TypeScript (`tsc --noEmit`) |
 | `npm run lint` | Lint Expo |
 
@@ -110,8 +111,9 @@ Playwright réutilise un serveur déjà lancé.
   hors ligne** rejouée via `POST /sync` (idempotente), indicateur de
   synchronisation permanent, **résolution de conflits assistée** champ par champ,
   tableau de bord consultable hors ligne.
-- **Lot 5** — Intégration continue GitHub Actions (lint, typecheck, tests) avec
-  badge. E2E et déploiement web : voir la CI et `docs/`.
+- **Lot 5** — Intégration continue GitHub Actions (lint, typecheck, tests, E2E)
+  avec badge ; export web statique déployable (GitHub Pages / Netlify / Vercel /
+  EAS), voir `docs/DEPLOIEMENT.md`.
 
 > Note : l'API fournie n'implémente pas les routes de couverture décrites dans son
 > annexe (voir `docs/API-ECARTS.md`) ; l'affichage dégrade proprement et l'upload
@@ -122,4 +124,6 @@ Playwright réutilise un serveur déjà lancé.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — schéma des couches, parcours d'une modification.
 - [`docs/ADR/`](docs/ADR/) — décisions d'architecture.
 - [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) — mesures de performance sur les 500 ouvrages.
+- [`docs/DEPLOIEMENT.md`](docs/DEPLOIEMENT.md) — export web statique et cibles de déploiement.
+- [`docs/API-ECARTS.md`](docs/API-ECARTS.md) — écarts constatés dans l'API fournie.
 - [`IA.md`](IA.md) — usage de l'assistant de génération de code.

@@ -46,7 +46,7 @@ cliente de l'API `api-books-v2`. Sujet complet : `SPECIFICATION.md`.
 - [x] Lot 2 (notes, favori optimiste, recherche/filtres/tri serveur, scroll infini, debounce, a11y)
 - [x] Lot 3 (note étoiles, couvertures+repli, OpenLibrary, thème clair/sombre, i18n, perf)
 - [x] Lot 4 (auth+intercepteur single-flight, cache persistant, file mutations offline, sync idempotent, conflits assistés, dashboard offline)
-- [x] Lot 5 partiel (CI GitHub Actions lint/typecheck/tests + E2E Playwright + badge)
+- [x] Lot 5 partiel (CI GitHub Actions lint/typecheck/tests + E2E Playwright + badge ; export web statique + configs de déploiement GitHub Pages/Netlify/Vercel/EAS)
 
 ## Tests
 `npm test` — 68 tests Jest verts (domain, services, auth single-flight, form resolver, composants RTL, hook).
@@ -57,6 +57,11 @@ RTL 14 : `render`/`renderHook` sont **async** (await). Lint 0 erreur, tsc 0 erre
 ## Bugs API contournés côté client (API non modifiée)
 - `/covers`, `/books/:id/cover`, `/media` absents → repli image (`docs/API-ECARTS.md`).
 - `POST/PUT /books` rejette `couverture: null` (422) → `services/api/livres.ts::corpsLivre` omet le champ null (création, PUT, PATCH, sync). Découvert par l'E2E.
+
+## Déploiement web
+- `npm run export:web` → `dist/` (rendu statique, 10 routes). API via `EXPO_PUBLIC_API_URL` au build.
+- `app.config.js` injecte `experiments.baseUrl` depuis `EXPO_BASE_URL` (sous-chemin GitHub Pages) sans impacter dev/local.
+- Cibles prêtes : `.github/workflows/deploy-web.yml` (Pages), `netlify.toml`, `vercel.json`, `eas.json`. Voir `docs/DEPLOIEMENT.md`.
 
 ## Conventions Git
 Commits conventionnels : `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Un commit par fonctionnalité/fix.
