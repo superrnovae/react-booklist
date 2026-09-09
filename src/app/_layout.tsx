@@ -1,6 +1,7 @@
 import '@/global.css';
 import '@/theme/i18n';
 
+import { View } from 'react-native';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Redirect, Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -12,6 +13,7 @@ import { ErrorBoundary } from '@/components';
 import { queryClient } from '@/features/query/client';
 import { creerPersister } from '@/features/query/persister';
 import { FournisseurAuthentification, useAuth } from '@/features/auth';
+import { FournisseurSync, IndicateurSync } from '@/features/sync';
 import { FournisseurSnackbar } from '@/features/ui/Snackbar';
 import { restaurerLangue } from '@/theme/i18n';
 import { FournisseurTheme, usePalette, useTheme } from '@/theme/ThemeProvider';
@@ -38,8 +40,9 @@ function Navigation() {
   const palette = usePalette();
   const { estSombre } = useTheme();
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: palette.fond }}>
       <StatusBar style={estSombre ? 'light' : 'dark'} />
+      <IndicateurSync />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: palette.fond },
@@ -48,7 +51,7 @@ function Navigation() {
           headerShadowVisible: false,
         }}
       />
-    </>
+    </View>
   );
 }
 
@@ -66,11 +69,13 @@ export default function RootLayout() {
         <FournisseurTheme>
           <FournisseurSnackbar>
             <FournisseurAuthentification>
-              <ErrorBoundary>
-                <Garde>
-                  <Navigation />
-                </Garde>
-              </ErrorBoundary>
+              <FournisseurSync>
+                <ErrorBoundary>
+                  <Garde>
+                    <Navigation />
+                  </Garde>
+                </ErrorBoundary>
+              </FournisseurSync>
             </FournisseurAuthentification>
           </FournisseurSnackbar>
         </FournisseurTheme>

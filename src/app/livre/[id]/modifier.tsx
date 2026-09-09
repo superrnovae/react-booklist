@@ -1,19 +1,19 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { EtatErreur, Squelette } from '@/components';
-import { ErreurConflit, ErreurValidation } from '@/domain/erreurs';
 import type { SaisieLivre } from '@/domain/types';
+import { ErreurConflit, ErreurValidation } from '@/domain/erreurs';
 import {
-    FormulaireLivre,
-    useEnregistrerLivre,
-    useLivre,
-    type ValeursFormulaireLivre,
+  FormulaireLivre,
+  useActionsLivre,
+  useLivre,
+  type ValeursFormulaireLivre,
 } from '@/features/books';
 import { useSnackbar } from '@/features/ui/Snackbar';
-import { useI18n } from '@/theme/formats';
+import { EtatErreur, Squelette } from '@/components';
 import { espacements } from '@/theme/tokens';
+import { useI18n } from '@/theme/formats';
 
 export default function EcranModifier() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,28 +21,27 @@ export default function EcranModifier() {
   const { t } = useI18n();
   const { afficher } = useSnackbar();
   const q = useLivre(id ?? '');
-  const enregistrer = useEnregistrerLivre(id ?? '');
+  const { modifier } = useActionsLivre();
   const [erreursServeur, setErreursServeur] = useState<Record<string, string>>();
+  const [enCours, setEnCours] = useState(false);
 
-  const soumettre = (saisie: SaisieLivre) => {
+  const soumettre = async (saisie: SaisieLivre) => {
     if (!q.data) return;
     setErreursServeur(undefined);
-    enregistrer.mutate(
-      { saisie: { ...saisie, couverture: q.data.couverture }, version: q.data.version },
-      {
-        onSuccess: () => {
-          afficher(t('messages.majReussie'));
-          router.back();
-        },
-        onError: (e) => {
-          if (e instanceof ErreurValidation) setErreursServeur(e.champs);
-          else if (e instanceof ErreurConflit) {
-            afficher(t('reseau.conflit'));
-            void q.refetch();
-          } else afficher(e instanceof Error ? e.message : t('etats.erreurTitre'));
-        },
-      },
-    );
+    setEnCours(true);
+    try {
+      await modifier(q.data, { ...saisie, couverture: q.data.couverture });
+      afficher(t('messages.majReussie'));
+      router.back();
+    } catch (e) {
+      if (e instanceof ErreurValidation) setErreursServeur(e.champs);
+      else if (e instanceof ErreurConflit) {
+        afficher(t('reseau.conflit'));
+        void q.refetch();
+      } else afficher(e instanceof Error ? e.message : t('etats.erreurTitre'));
+    } finally {
+      setEnCours(false);
+    }
   };
 
   const valeursInitiales: Partial<ValeursFormulaireLivre> | undefined = q.data
@@ -66,7 +65,7 @@ export default function EcranModifier() {
           <Squelette hauteur={44} />
           <Squelette hauteur={44} />
         </View>
-      ) : q.isError ? (
+      ) : q.isError && !q.data ? (
         <EtatErreur
           titre={t('etats.erreurTitre')}
           message={q.error instanceof Error ? q.error.message : undefined}
@@ -76,7 +75,7 @@ export default function EcranModifier() {
       ) : (
         <FormulaireLivre
           valeursInitiales={valeursInitiales}
-          enCours={enregistrer.isPending}
+          enCours={enCours}
           erreursServeur={erreursServeur}
           libelleAction={t('actions.enregistrer')}
           onSoumettre={soumettre}
