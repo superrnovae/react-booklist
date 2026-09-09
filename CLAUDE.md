@@ -41,12 +41,17 @@ cliente de l'API `api-books-v2`. Sujet complet : `SPECIFICATION.md`.
 - [x] API vérifiée (install/seed/health)
 - [x] Git réinitialisé (repo neuf, commits atomiques)
 - [x] Dépendances client
-- [x] Fondations: domain (types, erreurs, tri, mutations, sync) + services (client HTTP zod, endpoints, abstractions) + theme/i18n
-- [ ] Lot 1 · Lot 2 · Lot 3 · Lot 4 · Lot 5
+- [x] Fondations: domain + services + theme/i18n
+- [x] Lot 1 (CRUD, pagination, 4 états, undo delete, form RHF+zod, TanStack Query)
+- [x] Lot 2 (notes, favori optimiste, recherche/filtres/tri serveur, scroll infini, debounce, a11y)
+- [x] Documentation: README, ARCHITECTURE, ADR 001-004, PERFORMANCE, IA.md
+- [ ] Lot 3 (couvertures upload, OpenLibrary, note étoiles, perf doc) — thème/i18n déjà faits
+- [ ] Lot 4 (auth+intercepteur, offline queue, sync, conflits, dashboard)
+- [ ] Lot 5 (CI, e2e, deploy)
 
 ## Tests
-`npm test` — domain (mutations, sync, tri) + services (client, erreurs-http, couverture). 38 tests verts.
-Couverture visée ≥40% sur domain/ et services/.
+`npm test` — 56 tests verts (domain, services, 3 composants RTL, 1 hook mock fetch).
+RTL 14 : `render`/`renderHook` sont **async** (await). Couverture domain 94%, global ~78%.
 
 ## Conventions Git
 Commits conventionnels : `feat`, `fix`, `refactor`, `test`, `docs`, `chore`. Un commit par fonctionnalité/fix.

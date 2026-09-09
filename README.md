@@ -1,56 +1,97 @@
-# Welcome to your Expo app 👋
+# BookList Pro
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Le cahier de lecture numérique des Comptoirs du Livre. Application **React Native
+(Expo Router)** ciblant en priorité le **navigateur**, cliente de l'API fournie
+`api-books-v2`.
 
-## Get started
+## Démarrage en moins de 5 minutes
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Prérequis : Node ≥ 20.
 
 ```bash
-npm run reset-project
+# 1) L'API (dans un premier terminal)
+cd api-books-v2
+npm install
+npm run seed          # 500 ouvrages + 2 comptes
+npm start             # http://localhost:3000
+
+# 2) L'application (dans un second terminal, à la racine)
+npm install
+npm run web           # ouvre http://localhost:8081
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+L'application détecte l'API sur `http://<hôte>:3000`. Pour pointer ailleurs :
 
-### Other setup steps
+```bash
+# .env  (jamais de secret ici, variable publique)
+EXPO_PUBLIC_API_URL=http://localhost:3000
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+### Comptes de test (lot 4, authentification)
 
-## Learn more
+| Email | Mot de passe | Rôle |
+|---|---|---|
+| `editeur@booklist.fr` | `editeur123` | Libraire titulaire (écriture) |
+| `lecteur@booklist.fr` | `lecteur123` | Libraire saisonnier (lecture seule) |
 
-To learn more about developing your project with Expo, look at the following resources:
+## Scripts
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+| Commande | Effet |
+|---|---|
+| `npm run web` | Lance l'app sur navigateur |
+| `npm test` | Tests unitaires et composants (Jest) |
+| `npm run test:coverage` | Tests + couverture |
+| `npm run typecheck` | Vérification TypeScript (`tsc --noEmit`) |
+| `npm run lint` | Lint Expo |
 
-## Join the community
+### Lancer l'API dans ses différents modes (Windows PowerShell)
 
-Join our community of developers creating universal apps.
+Les scripts `chaos`/`auth`/`final` de l'API utilisent une syntaxe Unix. Sous
+Windows, définissez les variables puis lancez le serveur :
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```powershell
+cd api-books-v2
+$env:AUTH_REQUIRED='true'; $env:CHAOS_LATENCE='1500'; $env:CHAOS_ECHEC='0.3'; node src/server.js
+```
+
+## Architecture
+
+Découpage en couches strict (détaillé dans [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)) :
+
+```
+src/
+  app/         écrans et routing (expo-router) — ni logique métier, ni appel réseau
+  components/  UI pure, sans dépendance à l'API ni au store
+  features/    logique par domaine (books, notes, auth, sync, stats, ui)
+  hooks/       hooks réutilisables
+  services/    réseau, stockage, plateforme — seul endroit qui connaît l'API
+  domain/      types et règles métier pures (tri, file de mutations, conflits)
+  theme/       tokens de design et i18n
+```
+
+Règle vérifiée : **aucun `fetch` ni URL en dur** hors de `services/`.
+
+## Contrat de qualité
+
+- TypeScript strict, **zéro `any`**, réponses API **validées à l'exécution avec zod**.
+- Erreurs applicatives discriminées (`ErreurReseau`, `ErreurValidation`,
+  `ErreurConflit`, `ErreurAuth`), `ErrorBoundary` global, réessai visible.
+- 422 (erreur par champ) et 503 (réessai) traités différemment.
+- Quatre états sur chaque écran de données : chargement (squelette), erreur,
+  vide contextualisé, succès.
+- Thème clair/sombre et interface bilingue fr/en, sans couleur ni chaîne en dur.
+
+## État des lots livrés
+
+- **Lot 1** — CRUD ouvrages, statut lu, pagination serveur, suppression annulable,
+  formulaire react-hook-form + zod, TanStack Query.
+- **Lot 2** — Notes de lecture, coups de cœur optimistes, recherche/filtres/tri
+  serveur, défilement infini, anti-rebond 300 ms, accessibilité.
+- **Lot 3 / 4** — voir `docs/ADR/` pour les décisions et l'état d'avancement.
+
+## Documentation
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — schéma des couches, parcours d'une modification.
+- [`docs/ADR/`](docs/ADR/) — décisions d'architecture.
+- [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) — mesures de performance sur les 500 ouvrages.
+- [`IA.md`](IA.md) — usage de l'assistant de génération de code.
