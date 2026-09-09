@@ -3,7 +3,7 @@
  * Validation typée, message par champ, soumission désactivée pendant l'envoi,
  * remontée des erreurs 422 de l'API sur les bons champs.
  */
-import { Bouton, Champ, Texte } from '@/components';
+import { Bouton, Champ, EtoilesNote, Texte } from '@/components';
 import type { SaisieLivre } from '@/domain/types';
 import { usePalette } from '@/theme/ThemeProvider';
 import { useI18n } from '@/theme/formats';
@@ -106,6 +106,21 @@ export function FormulaireLivre({
           )}
         />
       ))}
+
+      <Controller
+        control={control}
+        name="note"
+        render={({ field }) => (
+          <View style={styles.bascule}>
+            <Texte>{t('livre.note')}</Texte>
+            <EtoilesNote
+              valeur={field.value as number | null}
+              onChange={field.onChange}
+              libelle={t('livre.note')}
+            />
+          </View>
+        )}
+      />
 
       <Bouton
         titre={libelleAction}

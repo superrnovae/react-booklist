@@ -55,6 +55,27 @@ function patcherListes(qc: ReturnType<typeof useQueryClient>, id: string, champ:
   });
 }
 
+/** Attribue une note 0–5 (optimiste sur le détail). */
+export function useNoterLivre(livre: Livre) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (note: number) =>
+      modifierLivre(livre.id, { note }, livre.version),
+    onMutate: async (note) => {
+      const cle = clesLivres.detail(livre.id);
+      await qc.cancelQueries({ queryKey: cle });
+      const precedent = qc.getQueryData<Livre>(cle);
+      qc.setQueryData<Livre>(cle, (a) => (a ? { ...a, note } : a));
+      return { precedent };
+    },
+    onError: (_e, _v, contexte) => {
+      if (contexte?.precedent) qc.setQueryData(clesLivres.detail(livre.id), contexte.precedent);
+    },
+    onSuccess: (maj) => qc.setQueryData(clesLivres.detail(livre.id), maj),
+    onSettled: () => qc.invalidateQueries({ queryKey: clesLivres.listes() }),
+  });
+}
+
 /** Bascule optimiste d'un champ booléen (cœur, statut de lecture), listes comprises. */
 export function useBasculeChamp(livre: Livre, champ: ChampBascule) {
   const qc = useQueryClient();
