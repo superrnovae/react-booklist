@@ -1,9 +1,18 @@
 /**
  * Hooks de mutation des ouvrages. Invalidation des listes après écriture ;
  * mise à jour optimiste sur la bascule lu/favori avec retour arrière.
+ *
+ * Hors ligne (§4.2, BL-05) : la note, le cœur et le statut de lecture sont
+ * mis en file au même titre qu'une modification complète, via le même type
+ * de mutation 'update' — ce sont des écritures partielles d'un Livre comme
+ * les autres. Pas de retour arrière optimiste hors ligne : la mise à jour
+ * reste appliquée jusqu'à ce qu'un conflit ou un rejet de synchronisation la
+ * contredise (déjà géré par l'écran de conflits et la snackbar de rejet).
  */
 import type { Livre, SaisieLivre } from '@/domain/types';
+import { useSync } from '@/features/sync/SyncProvider';
 import { modifierLivre, supprimerLivre } from '@/services/api/livres';
+import { genererId } from '@/services/id';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { clesLivres } from './cles';
 
@@ -38,9 +47,20 @@ function patcherListes(qc: ReturnType<typeof useQueryClient>, id: string, champ:
 /** Attribue une note 0–5 (optimiste sur le détail). */
 export function useNoterLivre(livre: Livre) {
   const qc = useQueryClient();
+  const { enLigne, enfiler } = useSync();
   return useMutation({
-    mutationFn: (note: number) =>
-      modifierLivre(livre.id, { note }, livre.version),
+    mutationFn: async (note: number) => {
+      if (enLigne) return modifierLivre(livre.id, { note }, livre.version);
+      const local: Livre = { ...livre, note, updatedAt: new Date().toISOString() };
+      await enfiler({
+        id: genererId(),
+        type: 'update',
+        horodatage: local.updatedAt,
+        livre: local,
+        baseVersion: livre.version,
+      });
+      return local;
+    },
     onMutate: async (note) => {
       const cle = clesLivres.detail(livre.id);
       await qc.cancelQueries({ queryKey: cle });
@@ -59,9 +79,23 @@ export function useNoterLivre(livre: Livre) {
 /** Bascule optimiste d'un champ booléen (cœur, statut de lecture), listes comprises. */
 export function useBasculeChamp(livre: Livre, champ: ChampBascule) {
   const qc = useQueryClient();
+  const { enLigne, enfiler } = useSync();
   return useMutation({
-    mutationFn: () =>
-      modifierLivre(livre.id, { [champ]: !livre[champ] } as Partial<SaisieLivre>, livre.version),
+    mutationFn: async () => {
+      const cible = !livre[champ];
+      if (enLigne) {
+        return modifierLivre(livre.id, { [champ]: cible } as Partial<SaisieLivre>, livre.version);
+      }
+      const local: Livre = { ...livre, [champ]: cible, updatedAt: new Date().toISOString() };
+      await enfiler({
+        id: genererId(),
+        type: 'update',
+        horodatage: local.updatedAt,
+        livre: local,
+        baseVersion: livre.version,
+      });
+      return local;
+    },
     onMutate: async () => {
       const cle = clesLivres.detail(livre.id);
       await qc.cancelQueries({ queryKey: cle });
