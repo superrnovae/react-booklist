@@ -98,6 +98,11 @@ const en: Traductions = {
     droitsInsuffisants: 'Reserved for permanent booksellers.',
     lecteur: 'Seasonal bookseller (read only)',
     editeur: 'Permanent bookseller',
+    deconnexionTitre: 'Unsynced changes',
+    deconnexionMessage:
+      '{{count}} pending change could not be sent to the server. It will be lost if you sign out now.',
+    deconnexionMessage_other:
+      '{{count}} pending changes could not be sent to the server. They will be lost if you sign out now.',
   },
   conflit: {
     titre: 'Version conflict',

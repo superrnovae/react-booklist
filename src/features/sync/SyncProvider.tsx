@@ -40,6 +40,23 @@ type ContexteSync = {
 
 const Contexte = createContext<ContexteSync | null>(null);
 
+/**
+ * Accès à la file, injectable depuis l'extérieur de l'arbre React (même
+ * schéma que définirFournisseurAuth dans services/api/client.ts) — utile à
+ * la déconnexion (BL-09) : FournisseurAuthentification est un *ancêtre* de
+ * FournisseurSync dans _layout.tsx, il ne peut donc pas appeler useSync().
+ * Avant de purger, on tente une synchronisation : la règle du sujet est
+ * qu'une saisie de libraire ne se perd jamais, y compris à la déconnexion.
+ */
+type AccesFileSync = { nombreEnAttente: () => number; synchroniser: () => Promise<void>; purger: () => Promise<void> };
+let accesFileInjecte: AccesFileSync | null = null;
+export function definirAccesFileSync(acces: AccesFileSync | null): void {
+  accesFileInjecte = acces;
+}
+export function accederFileSync(): AccesFileSync | null {
+  return accesFileInjecte;
+}
+
 export function FournisseurSync({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const { t } = useI18n();
@@ -153,6 +170,22 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
     setFile(restante);
     void sauverFile(restante);
   }, []);
+
+  /** Vide la file, persistée comprise — utilisé à la déconnexion (BL-09) une fois la synchronisation tentée. */
+  const viderFile = useCallback(async () => {
+    fileRef.current = [];
+    setFile([]);
+    await sauverFile([]);
+  }, []);
+
+  useEffect(() => {
+    definirAccesFileSync({
+      nombreEnAttente: () => fileRef.current.length,
+      synchroniser: lancerSync,
+      purger: viderFile,
+    });
+    return () => definirAccesFileSync(null);
+  }, [lancerSync, viderFile]);
 
   const valeur = useMemo<ContexteSync>(
     () => ({ enLigne, file, conflits, enfiler, synchroniser: lancerSync, resoudreConflit }),
