@@ -1,8 +1,6 @@
 # BookList Pro
 
-[![CI](https://github.com/OWNER/booklist-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/booklist-pro/actions/workflows/ci.yml)
-
-> Remplacez `OWNER/booklist-pro` par le chemin réel du dépôt pour activer le badge.
+[![CI](https://github.com/superrnovae/react-booklist/actions/workflows/ci.yml/badge.svg)](https://github.com/superrnovae/react-booklist/actions/workflows/ci.yml)
 
 Le cahier de lecture numérique des Comptoirs du Livre. Application **React Native
 (Expo Router)** ciblant en priorité le **navigateur**, cliente de l'API fournie

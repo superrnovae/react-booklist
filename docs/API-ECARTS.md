@@ -51,3 +51,25 @@ Découvert via le test E2E de création d'ouvrage. **Correctif côté client**
 `couverture` du corps lorsqu'elle vaut `null`, pour la création, le remplacement,
 la modification partielle et la synchronisation par lot. Couvert par un test
 unitaire.
+
+## `db.js` suppose que `data/` existe déjà — échoue sur un clone neuf
+
+`api-books-v2/data/` n'est pas versionné (`data/db.json` et `data/db.json.tmp`
+sont dans `api-books-v2/.gitignore`, et git ne suit pas les dossiers vides). Or
+`sauvegarder()` (`api-books-v2/src/db.js`) appelle directement
+`fs.writeFileSync(FICHIER + '.tmp', ...)` sans jamais créer le dossier parent.
+Sur un clone tout neuf (typiquement en CI), `npm run seed` — et donc tout
+démarrage du serveur — échoue immédiatement :
+
+```
+Error: ENOENT: no such file or directory, open '.../api-books-v2/data/db.json.tmp'
+    at Object.writeFileSync (node:fs:2380:20)
+    at .../api-books-v2/src/db.js:35:8
+```
+
+En local, ça « marche » uniquement parce que le dossier `data/` a été créé une
+première fois à la main et traîne depuis sur le poste.
+
+**Correctif côté CI** (sans toucher l'API) : le job `e2e` de
+`.github/workflows/ci.yml` crée le dossier (`mkdir -p data`) juste avant
+`npm run seed`.
