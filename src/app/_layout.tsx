@@ -63,26 +63,30 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <PersistQueryClientProvider
-        client={queryClient}
-        persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
-      >
-        <FournisseurTheme>
-          <FournisseurSnackbar>
-            <FournisseurConfirmation>
-              <FournisseurAuthentification>
-                <FournisseurSync>
-                  <ErrorBoundary>
+      {/* Au sommet de l'arbre (BL-10) : couvre une erreur pendant
+          l'initialisation d'un fournisseur, PersistQueryClientProvider
+          (I/O de stockage au démarrage) et le thème/i18n compris — voir
+          ErrorBoundary.tsx pour pourquoi son rendu de secours n'en dépend pas. */}
+      <ErrorBoundary>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+        >
+          <FournisseurTheme>
+            <FournisseurSnackbar>
+              <FournisseurConfirmation>
+                <FournisseurAuthentification>
+                  <FournisseurSync>
                     <Garde>
                       <Navigation />
                     </Garde>
-                  </ErrorBoundary>
-                </FournisseurSync>
-              </FournisseurAuthentification>
-            </FournisseurConfirmation>
-          </FournisseurSnackbar>
-        </FournisseurTheme>
-      </PersistQueryClientProvider>
+                  </FournisseurSync>
+                </FournisseurAuthentification>
+              </FournisseurConfirmation>
+            </FournisseurSnackbar>
+          </FournisseurTheme>
+        </PersistQueryClientProvider>
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
