@@ -25,7 +25,7 @@ export type Conflit = {
 
 /** Décision par mutation : la retirer de la file, la garder, ou lever un conflit. */
 export type Decision =
-  | { sort: 'retirer'; id: string; livre?: Livre | null }
+  | { sort: 'retirer'; id: string; livre?: Livre | null; message?: string; champs?: ChampsErreur }
   | { sort: 'conflit'; id: string; conflit: Conflit }
   | { sort: 'garder'; id: string; message?: string; champs?: ChampsErreur };
 
@@ -55,16 +55,31 @@ export function resoudreSync(file: Mutation[], reponse: ReponseSync): Decision[]
       });
       continue;
     }
-    // erreur de validation métier : inutile de réessayer à l'identique.
+    // erreur de validation métier : inutile de réessayer à l'identique. Le
+    // motif est conservé sur la décision — la mutation est retirée, mais
+    // pas en silence (BL-03) : la couche d'appel l'affiche au libraire.
     const validationDefinitive = r.champs !== undefined;
     decisions.push(
       validationDefinitive
-        ? { sort: 'retirer', id: r.id }
+        ? { sort: 'retirer', id: r.id, message: r.message, champs: r.champs }
         : { sort: 'garder', id: r.id, message: r.message },
     );
   }
 
   return decisions;
+}
+
+/**
+ * Motif lisible d'un rejet définitif (§4.2 : aucune perte silencieuse). Le
+ * serveur ne fournit pas toujours de `message` pour une 422 de /sync — seuls
+ * les `champs` en faute le sont ; on construit alors le motif à partir d'eux.
+ */
+export function motifRejet(decision: Extract<Decision, { sort: 'retirer' }>): string | undefined {
+  if (decision.message) return decision.message;
+  if (!decision.champs) return undefined;
+  return Object.entries(decision.champs)
+    .map(([champ, motif]) => `${champ} : ${motif}`)
+    .join(', ');
 }
 
 const CHAMPS_COMPARES = [

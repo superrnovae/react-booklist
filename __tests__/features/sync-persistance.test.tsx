@@ -20,7 +20,8 @@ import { FournisseurSync, useSync } from '@/features/sync/SyncProvider';
 import { chargerFile, sauverFile } from '@/features/sync/file';
 import { AsyncStorage } from '@/services/stockage';
 import { synchroniser } from '@/services/api/sync';
-import { creerClientTest, EnveloppeQuery } from '../utils/rendu';
+import { FournisseurSnackbar } from '@/features/ui/Snackbar';
+import { creerClientTest, EnveloppeQuery, screen } from '../utils/rendu';
 
 const synchroniserMock = synchroniser as jest.MockedFunction<typeof synchroniser>;
 
@@ -54,7 +55,9 @@ function enveloppe() {
   const client = creerClientTest();
   return ({ children }: { children: ReactNode }) => (
     <EnveloppeQuery client={client}>
-      <FournisseurSync>{children}</FournisseurSync>
+      <FournisseurSnackbar>
+        <FournisseurSync>{children}</FournisseurSync>
+      </FournisseurSnackbar>
     </EnveloppeQuery>
   );
 }
@@ -129,5 +132,58 @@ describe('FournisseurSync — persistance des conflits (BL-02)', () => {
 
     const relue = await chargerFile();
     expect(relue).toHaveLength(0);
+  });
+});
+
+describe('FournisseurSync — motif d’un rejet de validation (BL-03)', () => {
+  it('affiche le motif au lieu de retirer la mutation en silence', async () => {
+    await sauverFile([mutationModifiee]);
+
+    synchroniserMock.mockResolvedValue({
+      resultats: [{ id: 'm1', statut: 'erreur', champs: { titre: 'obligatoire' } }],
+      resume: { total: 1, ok: 0, conflits: 0, erreurs: 1 },
+      serveurLe: '2026-01-01T00:05:00.000Z',
+    });
+
+    const { result, unmount } = await renderHook(() => useSync(), { wrapper: enveloppe() });
+    await waitFor(() => expect(result.current.file).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.synchroniser();
+    });
+
+    // La mutation, invalide côté serveur, est bien retirée...
+    expect(result.current.file).toHaveLength(0);
+    expect(result.current.conflits).toHaveLength(0);
+    // ...mais le libraire est prévenu, pas laissé dans le silence. Le motif
+    // (nom de champ + raison serveur) n'est pas traduit : seule la phrase
+    // qui l'entoure l'est, on ancre donc l'assertion dessus (indépendant
+    // de la langue active dans l'environnement de test).
+    expect(screen.getByText(/titre.*:.*obligatoire/i)).toBeTruthy();
+    unmount();
+  });
+
+  it('ne montre rien pour une erreur transitoire (retentée, pas retirée)', async () => {
+    await sauverFile([mutationModifiee]);
+
+    synchroniserMock.mockResolvedValue({
+      resultats: [{ id: 'm1', statut: 'erreur', message: 'service indisponible' }],
+      resume: { total: 1, ok: 0, conflits: 0, erreurs: 1 },
+      serveurLe: '2026-01-01T00:05:00.000Z',
+    });
+
+    const { result, unmount } = await renderHook(() => useSync(), { wrapper: enveloppe() });
+    await waitFor(() => expect(result.current.file).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.synchroniser();
+    });
+
+    // Erreur transitoire (pas de `champs`) : la mutation reste en file pour
+    // un prochain essai, et n'est pas confondue avec un rejet définitif —
+    // donc pas de snackbar de rejet affiché.
+    expect(result.current.file).toHaveLength(1);
+    expect(screen.queryByText(/service indisponible/i)).toBeNull();
+    unmount();
   });
 });
