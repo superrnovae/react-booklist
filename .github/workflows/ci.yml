@@ -22,6 +22,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Générer expo-env.d.ts
+        # Fichier gitignore (recommandation Expo), normalement régénéré au
+        # premier `expo start`. En CI, rien ne lance jamais le serveur de
+        # dev avant `tsc` : sans lui, la référence de triple-slash vers
+        # `expo/types` (qui déclare `declare module '*.css'`) est absente et
+        # le typecheck échoue sur l'import de src/app/_layout.tsx. Contenu
+        # strictement identique à celui qu'Expo générerait.
+        run: |
+          cat > expo-env.d.ts << 'EOF'
+          /// <reference types="expo/types" />
+
+          // NOTE: This file should not be edited and should be in your git ignore
+          EOF
+
       - name: Lint
         run: npm run lint
 
@@ -56,6 +70,11 @@ jobs:
       - name: Seed and start API
         working-directory: api-books-v2
         run: |
+          # data/ n'est pas versionné (voir docs/API-ECARTS.md) et db.js
+          # écrit dans data/db.json.tmp sans jamais créer le dossier : sur
+          # un clone neuf, `npm run seed` échoue avec ENOENT. api-books-v2/
+          # n'est jamais modifié — le dossier est créé ici, côté CI.
+          mkdir -p data
           npm run seed
           node src/server.js &
           npx wait-on http://localhost:3000/health
