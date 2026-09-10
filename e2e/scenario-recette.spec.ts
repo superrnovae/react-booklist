@@ -162,9 +162,15 @@ test.describe('Scénario de recette — chapitre 4.6', () => {
     // On est de nouveau en ligne à ce stade : la recherche serveur peut
     // être utilisée pour le retrouver, où qu'il tombe alphabétiquement
     // parmi les 500 ouvrages (rien ne garantit qu'il soit sur la 1ère page).
+    // Locator scopé sur la carte : une couverture absente (couverture: null,
+    // /covers/<id>.svg non servi par l'API — voir docs/API-ECARTS.md) affiche
+    // un repli qui répète aussi le titre en texte (CouvertureImage.tsx) ;
+    // getByText(titreCree) seul compterait ce repli en plus de la carte.
     await page.goto('/');
     await page.getByTestId('recherche').fill(titreCree);
-    await expect(page.getByText(titreCree)).toHaveCount(1, { timeout: 15_000 });
+    await expect(page.getByTestId('livre-carte').filter({ hasText: titreCree })).toHaveCount(1, {
+      timeout: 15_000,
+    });
 
     // --- 9) Le conflit sur l'ouvrage cible est détecté et affiché.
     await page.goto('/conflits');
