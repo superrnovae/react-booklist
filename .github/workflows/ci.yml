@@ -80,7 +80,12 @@ jobs:
           npx wait-on http://localhost:3000/health
 
       - name: Run E2E (Playwright starts the web server)
-        run: npm run e2e
+        # e2e/scenario-recette.spec.ts (chapitre 4.6) a besoin de l'API en
+        # mode authentifié avec un TTL de jeton raccourci (voir son en-tête)
+        # — pas le mode normal démarré ci-dessus. Ciblé explicitement plutôt
+        # que `npm run e2e` (qui prendrait aussi ce fichier et échouerait
+        # faute du bon mode). Se lance à part : `npm run e2e:recette`.
+        run: npx playwright test e2e/parcours-critique.spec.ts
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}

@@ -68,6 +68,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "e2e": "playwright test",
+    "e2e:recette": "playwright test e2e/scenario-recette.spec.ts",
     "e2e:report": "playwright show-report",
     "export:web": "expo export --platform web",
     "deploy:eas": "eas deploy"

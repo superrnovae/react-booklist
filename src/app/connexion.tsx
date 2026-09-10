@@ -62,6 +62,7 @@ export default function EcranConnexion() {
           autoCapitalize="none"
           keyboardType="email-address"
           autoComplete="email"
+          testID="champ-email"
         />
         <Champ
           libelle={t('auth.motDePasse')}
@@ -69,6 +70,7 @@ export default function EcranConnexion() {
           onChangeText={setMotDePasse}
           secureTextEntry
           autoComplete="password"
+          testID="champ-mot-de-passe"
         />
         {erreur ? (
           <Texte couleur="danger" accessibilityRole="alert">
@@ -81,6 +83,7 @@ export default function EcranConnexion() {
           enCours={enCours}
           desactive={email.trim().length === 0 || motDePasse.length === 0}
           icone="connexion"
+          testID="soumettre-connexion"
         />
       </Carte>
 
