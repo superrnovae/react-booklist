@@ -10,6 +10,16 @@ jest.mock('@/services/reseau', () => ({
   lireEtatReseau: jest.fn(async () => true),
   surChangementReseau: jest.fn(() => () => {}),
 }));
+// La snackbar réelle dépend de l'animation (Animated.timing, act() non
+// concurrent en test) et son texte dépend de la langue résolue au démarrage
+// (theme/i18n.ts lit expo-localization, qui varie selon la machine/l'OS).
+// BL-03 ne prouve pas un rendu pixel précis : on vérifie que le motif est
+// bien transmis à la snackbar, indépendamment de la langue ou du rendu.
+const mockAfficher = jest.fn();
+jest.mock('@/features/ui/Snackbar', () => ({
+  useSnackbar: () => ({ afficher: mockAfficher }),
+  FournisseurSnackbar: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
@@ -20,8 +30,7 @@ import { FournisseurSync, useSync } from '@/features/sync/SyncProvider';
 import { chargerFile, sauverFile } from '@/features/sync/file';
 import { AsyncStorage } from '@/services/stockage';
 import { synchroniser } from '@/services/api/sync';
-import { FournisseurSnackbar } from '@/features/ui/Snackbar';
-import { creerClientTest, EnveloppeQuery, screen } from '../utils/rendu';
+import { creerClientTest, EnveloppeQuery } from '../utils/rendu';
 
 const synchroniserMock = synchroniser as jest.MockedFunction<typeof synchroniser>;
 
@@ -53,17 +62,18 @@ const mutationModifiee: Mutation = {
 
 function enveloppe() {
   const client = creerClientTest();
+  // useSnackbar est mocké ci-dessus (module entier) : plus besoin du vrai
+  // FournisseurSnackbar pour satisfaire son contexte.
   return ({ children }: { children: ReactNode }) => (
     <EnveloppeQuery client={client}>
-      <FournisseurSnackbar>
-        <FournisseurSync>{children}</FournisseurSync>
-      </FournisseurSnackbar>
+      <FournisseurSync>{children}</FournisseurSync>
     </EnveloppeQuery>
   );
 }
 
 beforeEach(async () => {
   synchroniserMock.mockReset();
+  mockAfficher.mockReset();
   await AsyncStorage.clear();
 });
 
@@ -155,11 +165,10 @@ describe('FournisseurSync — motif d’un rejet de validation (BL-03)', () => {
     // La mutation, invalide côté serveur, est bien retirée...
     expect(result.current.file).toHaveLength(0);
     expect(result.current.conflits).toHaveLength(0);
-    // ...mais le libraire est prévenu, pas laissé dans le silence. Le motif
-    // (nom de champ + raison serveur) n'est pas traduit : seule la phrase
-    // qui l'entoure l'est, on ancre donc l'assertion dessus (indépendant
-    // de la langue active dans l'environnement de test).
-    expect(screen.getByText(/titre.*:.*obligatoire/i)).toBeTruthy();
+    // ...mais le libraire est prévenu, pas laissé dans le silence : le motif
+    // (nom de champ + raison serveur, non traduit) atteint bien la snackbar.
+    expect(mockAfficher).toHaveBeenCalledTimes(1);
+    expect(mockAfficher.mock.calls[0][0]).toMatch(/titre.*:.*obligatoire/i);
     unmount();
   });
 
@@ -183,7 +192,7 @@ describe('FournisseurSync — motif d’un rejet de validation (BL-03)', () => {
     // un prochain essai, et n'est pas confondue avec un rejet définitif —
     // donc pas de snackbar de rejet affiché.
     expect(result.current.file).toHaveLength(1);
-    expect(screen.queryByText(/service indisponible/i)).toBeNull();
+    expect(mockAfficher).not.toHaveBeenCalled();
     unmount();
   });
 });
