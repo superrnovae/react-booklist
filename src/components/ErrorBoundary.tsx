@@ -1,15 +1,43 @@
 /**
  * ErrorBoundary global (§3.3) : affiche un écran exploitable plutôt qu'un écran
  * blanc, avec possibilité de réessayer. Ne journalise pas de données sensibles.
+ *
+ * Volontairement autonome (aucune dépendance à FournisseurTheme/useI18n) :
+ * il enveloppe tout l'arbre _layout.tsx, PersistQueryClientProvider compris
+ * (BL-10), pour couvrir une erreur survenant pendant l'initialisation d'un
+ * fournisseur — thème et i18n inclus, potentiellement la source du problème.
+ * Le texte est donc en dur en français (langue de repli du sujet), et la
+ * palette vient de useColorScheme() de react-native (natif, sans fournisseur)
+ * plutôt que de la palette de l'application.
  */
-import { espacements } from '@/theme/tokens';
 import { Component, type ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Bouton } from './Bouton';
-import { Texte } from './Texte';
+import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 type Props = { children: ReactNode };
 type State = { erreur: Error | null };
+
+const PALETTES = {
+  clair: { fond: '#FFFFFF', texte: '#1A1A1A', texteSecondaire: '#5A5A5A', danger: '#B3261E', bouton: '#1A1A1A', boutonTexte: '#FFFFFF' },
+  sombre: { fond: '#121212', texte: '#F2F2F2', texteSecondaire: '#B5B5B5', danger: '#F2B8B5', bouton: '#F2F2F2', boutonTexte: '#121212' },
+};
+
+function Secours({ message, onReessayer }: { message: string; onReessayer: () => void }) {
+  const p = useColorScheme() === 'dark' ? PALETTES.sombre : PALETTES.clair;
+  return (
+    <View style={[styles.centre, { backgroundColor: p.fond }]}>
+      <Text style={[styles.titre, { color: p.danger }]}>Une erreur inattendue est survenue</Text>
+      <Text style={[styles.message, { color: p.texteSecondaire }]}>{message}</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Réessayer"
+        onPress={onReessayer}
+        style={[styles.bouton, { backgroundColor: p.bouton }]}
+      >
+        <Text style={[styles.boutonTexte, { color: p.boutonTexte }]}>Réessayer</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { erreur: null };
@@ -27,17 +55,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (!this.state.erreur) return this.props.children;
-    return (
-      <View style={styles.centre}>
-        <Texte variante="titre" couleur="danger">
-          Une erreur inattendue est survenue
-        </Texte>
-        <Texte couleur="texteSecondaire" style={styles.message}>
-          {this.state.erreur.message}
-        </Texte>
-        <Bouton titre="Réessayer" onPress={this.reinitialiser} style={styles.action} icone="rafraichir" />
-      </View>
-    );
+    return <Secours message={this.state.erreur.message} onReessayer={this.reinitialiser} />;
   }
 }
 
@@ -46,9 +64,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: espacements.xl,
-    gap: espacements.md,
+    padding: 24,
+    gap: 12,
   },
-  message: { textAlign: 'center' },
-  action: { minWidth: 160 },
+  titre: { fontSize: 18, fontWeight: '700' },
+  message: { fontSize: 14, textAlign: 'center' },
+  bouton: { minWidth: 160, minHeight: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  boutonTexte: { fontSize: 14, fontWeight: '600' },
 });
