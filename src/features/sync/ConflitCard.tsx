@@ -63,7 +63,7 @@ function CarteConflitSuppression({ conflit }: { conflit: Conflit }) {
   };
 
   return (
-    <Carte style={styles.carte}>
+    <Carte style={styles.carte} testID="carte-conflit">
       <Texte variante="sousTitre">{serveur.titre}</Texte>
       <Texte variante="legende" couleur="texteSecondaire">
         {t('conflit.introSuppression')}
@@ -139,7 +139,7 @@ function CarteConflitMaj({ conflit }: { conflit: Conflit }) {
   };
 
   return (
-    <Carte style={styles.carte}>
+    <Carte style={styles.carte} testID="carte-conflit">
       <Texte variante="sousTitre">{serveur.titre}</Texte>
       <Texte variante="legende" couleur="texteSecondaire">
         {t('conflit.intro')}
@@ -175,7 +175,13 @@ function CarteConflitMaj({ conflit }: { conflit: Conflit }) {
         ))
       )}
 
-      <Bouton titre={t('conflit.appliquer')} onPress={appliquer} enCours={enCours} icone="appliquer" />
+      <Bouton
+        titre={t('conflit.appliquer')}
+        onPress={appliquer}
+        enCours={enCours}
+        icone="appliquer"
+        testID="appliquer-conflit"
+      />
     </Carte>
   );
 }

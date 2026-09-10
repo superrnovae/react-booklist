@@ -40,7 +40,10 @@ export function IndicateurSync() {
           : t('reseau.enLigne');
 
   const contenu = (
-    <View style={[styles.conteneur, { backgroundColor: palette.surface, borderColor: palette.bordure }]}>
+    <View
+      style={[styles.conteneur, { backgroundColor: palette.surface, borderColor: palette.bordure }]}
+      testID="indicateur-sync"
+    >
       <View style={[styles.barre, { backgroundColor: fond }]} accessibilityLiveRegion="polite">
         <Texte variante="legende" couleur={couleur}>
           {enLigne ? '●' : '○'} {message}

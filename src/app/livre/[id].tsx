@@ -143,7 +143,13 @@ function Fiche({
 
       {peutEcrire ? (
         <View style={styles.actions}>
-          <Bouton titre={t('actions.modifier')} onPress={onModifier} style={styles.flex} icone="modifier" />
+          <Bouton
+            titre={t('actions.modifier')}
+            onPress={onModifier}
+            style={styles.flex}
+            icone="modifier"
+            testID="modifier-livre"
+          />
           <Bouton
             titre={t('actions.supprimer')}
             onPress={demanderSuppression}
