@@ -23,7 +23,40 @@ npx serve dist -s -l 8090      # http://localhost:8090
 > définissez `EXPO_PUBLIC_API_URL` **au moment du build** vers l'API accessible
 > publiquement. L'API `api-books-v2` fournie est un serveur Express local : pour
 > une démo en ligne, hébergez-la (Render, Railway, Fly.io…) et pointez cette
-> variable dessus.
+> variable dessus. Sans ça, le client retombe sur `<hôte-du-site>:3000`, qui
+> n'existe pas sur un hébergeur statique — la connexion échoue (405/erreur
+> réseau selon l'hébergeur).
+
+### Héberger l'API sur Render
+
+Blueprint fourni : `render.yaml` (racine du dépôt). Il ne modifie rien dans
+`api-books-v2/` — il décrit seulement comment l'exécuter ailleurs qu'en local :
+
+1. [dashboard.render.com](https://dashboard.render.com) → **New → Blueprint**,
+   connecter le dépôt GitHub `superrnovae/react-booklist`. Render détecte
+   `render.yaml` et propose le service `booklist-api`.
+2. Valider — pas de variable à saisir à la main : `JWT_SECRET` et
+   `JWT_REFRESH_SECRET` sont générés par Render, `AUTH_REQUIRED` est à `false`
+   par défaut (démo publique simple ; passer à `true` depuis le tableau de bord
+   Render pour démontrer le lot 4).
+3. Une fois déployé, noter l'URL du service :
+   `https://booklist-api-<suffixe>.onrender.com`.
+4. Dépôt GitHub → **Settings → Secrets and variables → Actions → Variables** →
+   `EXPO_PUBLIC_API_URL` = cette URL.
+5. Relancer le workflow `Deploy Web` (push sur `main`, ou **Run workflow**
+   manuellement) pour que l'export web pointe vers l'API désormais accessible.
+
+**Limites du plan gratuit Render**, à connaître avant la démo :
+- Le service s'endort après ~15 min d'inactivité ; la requête qui le réveille
+  prend jusqu'à 50 s (le premier chargement du site déployé après une pause
+  peut donc sembler figé — c'est le réveil du service, pas un bug).
+- Pas de disque persistant sur le plan gratuit : `startCommand` reseed la base
+  à chaque démarrage/redéploiement (jeu de données déterministe — comptes de
+  test et 500 ouvrages identiques à chaque fois), donc les modifications faites
+  via le site déployé ne survivent pas à un redémarrage du service. Sans
+  conséquence pour la recette elle-même : le scénario du chapitre 4.6 se joue
+  en local (`npm run final`), pas via ce lien public — c'est uniquement le
+  bonus « export déployé, accessible par lien » du lot 5.
 
 ## 2. GitHub Pages (automatisé)
 
