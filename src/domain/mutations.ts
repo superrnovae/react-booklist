@@ -9,12 +9,21 @@
  */
 import type { Livre, SaisieLivre } from './types';
 
+/**
+ * Conflit détecté par le serveur pour une mutation en file (§4.3). Porté par
+ * la mutation elle-même plutôt que stocké à part : la mutation persistée
+ * *est* le conflit tant qu'il n'est pas arbitré, ce qui le fait survivre à un
+ * rechargement complet de la page sans stockage additionnel (BL-02).
+ */
+export type ConflitInfo = { serveur: Livre; versionAttendue: number };
+
 export type MutationCreation = {
   id: string;
   type: 'create';
   horodatage: string;
   /** Livre local avec id temporaire généré côté client. */
   livre: SaisieLivre & { id: string };
+  conflit?: ConflitInfo;
 };
 
 export type MutationMaj = {
@@ -23,6 +32,7 @@ export type MutationMaj = {
   horodatage: string;
   livre: Livre;
   baseVersion: number;
+  conflit?: ConflitInfo;
 };
 
 export type MutationSuppression = {
@@ -31,6 +41,7 @@ export type MutationSuppression = {
   horodatage: string;
   livreId: string;
   baseVersion: number;
+  conflit?: ConflitInfo;
 };
 
 export type Mutation = MutationCreation | MutationMaj | MutationSuppression;

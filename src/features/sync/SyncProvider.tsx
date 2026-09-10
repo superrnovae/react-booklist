@@ -2,6 +2,12 @@
  * Orchestration de la synchronisation hors ligne (§ Lot 4.2 / 4.3).
  * Connectivité, file persistée, rejeu par lot via POST /sync, collecte des
  * conflits pour arbitrage. La logique de décision est pure (domain/sync).
+ *
+ * Les conflits ne sont **pas** un état séparé : une mutation en conflit reste
+ * dans la file persistée, marquée `conflit` (voir domain/mutations.ts), et
+ * n'est retirée qu'une fois arbitrée (`resoudreConflit`). Elle survit ainsi à
+ * un rechargement complet de la page, et n'est plus renvoyée à /sync tant
+ * qu'elle n'est pas résolue (BL-02).
  */
 import type { Mutation } from '@/domain/mutations';
 import { resoudreSync, type Conflit } from '@/domain/sync';
@@ -19,7 +25,7 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import { chargerFile, enfilerPersistant, sauverFile } from './file';
+import { chargerFile, sauverFile, enfilerPersistant } from './file';
 
 type ContexteSync = {
   enLigne: boolean;
@@ -36,7 +42,6 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const [enLigne, setEnLigne] = useState(true);
   const [file, setFile] = useState<Mutation[]>([]);
-  const [conflits, setConflits] = useState<Conflit[]>([]);
   const enCours = useRef(false);
   const fileRef = useRef<Mutation[]>([]);
 
@@ -44,25 +49,51 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
     fileRef.current = file;
   }, [file]);
 
+  const conflits = useMemo<Conflit[]>(
+    () =>
+      file
+        .filter((m) => m.conflit !== undefined)
+        .map((m) => ({
+          mutation: m,
+          serveur: m.conflit!.serveur,
+          versionAttendue: m.conflit!.versionAttendue,
+        })),
+    [file],
+  );
+
   const lancerSync = useCallback(async () => {
     if (enCours.current) return;
-    const courante = fileRef.current;
-    if (courante.length === 0) return;
+    // Une mutation déjà en conflit attend un arbitrage manuel : on ne la
+    // renvoie pas à chaque tentative (le serveur la mémorise de toute façon,
+    // mais autant ne pas la resoumettre en boucle).
+    const aEnvoyer = fileRef.current.filter((m) => m.conflit === undefined);
+    if (aEnvoyer.length === 0) return;
     enCours.current = true;
     try {
-      const reponse = await synchroniser(courante);
-      const decisions = resoudreSync(courante, reponse);
-      const aRetirer = new Set(
-        decisions.filter((d) => d.sort === 'retirer' || d.sort === 'conflit').map((d) => d.id),
-      );
-      const nouveauxConflits = decisions
-        .filter((d): d is Extract<typeof d, { sort: 'conflit' }> => d.sort === 'conflit')
-        .map((d) => d.conflit);
+      const reponse = await synchroniser(aEnvoyer);
+      const decisions = resoudreSync(aEnvoyer, reponse);
+      const parId = new Map(decisions.map((d) => [d.id, d]));
 
-      const restante = courante.filter((m) => !aRetirer.has(m.id));
+      const restante: Mutation[] = [];
+      for (const m of fileRef.current) {
+        const decision = parId.get(m.id);
+        if (!decision) {
+          restante.push(m); // hors de ce lot (déjà en conflit, exclue plus haut)
+          continue;
+        }
+        if (decision.sort === 'retirer') continue; // synchronisée, ou rejet définitif
+        if (decision.sort === 'conflit') {
+          restante.push({
+            ...m,
+            conflit: { serveur: decision.conflit.serveur, versionAttendue: decision.conflit.versionAttendue },
+          });
+          continue;
+        }
+        restante.push(m); // 'garder' : erreur transitoire, retentée au prochain essai
+      }
+
       await sauverFile(restante);
       setFile(restante);
-      if (nouveauxConflits.length) setConflits((c) => [...c, ...nouveauxConflits]);
       void qc.invalidateQueries({ queryKey: clesLivres.tout });
     } catch {
       // Réseau/serveur indisponible : on garde la file pour un prochain essai.
@@ -95,8 +126,12 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
     [enLigne, lancerSync],
   );
 
+  /** Conflit arbitré (l'écriture directe vers le serveur a déjà eu lieu) : on retire la mutation de la file persistée. */
   const resoudreConflit = useCallback((id: string) => {
-    setConflits((c) => c.filter((cf) => cf.mutation.id !== id));
+    const restante = fileRef.current.filter((m) => m.id !== id);
+    fileRef.current = restante;
+    setFile(restante);
+    void sauverFile(restante);
   }, []);
 
   const valeur = useMemo<ContexteSync>(
