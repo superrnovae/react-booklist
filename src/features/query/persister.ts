@@ -8,6 +8,15 @@ import type { PersistedClient, Persister } from '@tanstack/react-query-persist-c
 
 const CLE = 'booklist.query-cache';
 
+/**
+ * Efface le cache persisté sans passer par une instance de Persister — utile
+ * à la déconnexion (BL-09), sur un poste de caisse partagé où le fonds mis
+ * en cache d'un libraire ne doit pas fuiter vers la session suivante.
+ */
+export async function viderCachePersistant(): Promise<void> {
+  await AsyncStorage.removeItem(CLE);
+}
+
 export function creerPersister(): Persister {
   return {
     persistClient: async (client: PersistedClient) => {

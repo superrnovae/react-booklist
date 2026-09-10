@@ -96,6 +96,11 @@ const fr = {
     droitsInsuffisants: 'Action réservée aux libraires titulaires.',
     lecteur: 'Libraire saisonnier (lecture seule)',
     editeur: 'Libraire titulaire',
+    deconnexionTitre: 'Modifications non synchronisées',
+    deconnexionMessage:
+      '{{count}} modification en attente n’a pas pu être envoyée au serveur. Elle sera perdue si vous vous déconnectez maintenant.',
+    deconnexionMessage_other:
+      '{{count}} modifications en attente n’ont pas pu être envoyées au serveur. Elles seront perdues si vous vous déconnectez maintenant.',
   },
   conflit: {
     titre: 'Conflit de version',
