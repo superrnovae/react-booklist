@@ -10,10 +10,12 @@
  * qu'elle n'est pas résolue (BL-02).
  */
 import type { Mutation } from '@/domain/mutations';
-import { resoudreSync, type Conflit } from '@/domain/sync';
+import { motifRejet, resoudreSync, type Conflit } from '@/domain/sync';
 import { clesLivres } from '@/features/books/cles';
+import { useSnackbar } from '@/features/ui/Snackbar';
 import { synchroniser } from '@/services/api/sync';
 import { lireEtatReseau, surChangementReseau } from '@/services/reseau';
+import { useI18n } from '@/theme/formats';
 import { useQueryClient } from '@tanstack/react-query';
 import {
     createContext,
@@ -40,6 +42,8 @@ const Contexte = createContext<ContexteSync | null>(null);
 
 export function FournisseurSync({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
+  const { t } = useI18n();
+  const { afficher } = useSnackbar();
   const [enLigne, setEnLigne] = useState(true);
   const [file, setFile] = useState<Mutation[]>([]);
   const enCours = useRef(false);
@@ -81,7 +85,13 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
           restante.push(m); // hors de ce lot (déjà en conflit, exclue plus haut)
           continue;
         }
-        if (decision.sort === 'retirer') continue; // synchronisée, ou rejet définitif
+        if (decision.sort === 'retirer') {
+          // Rejet de validation définitif (422) : la mutation est perdue,
+          // mais le libraire en est informé — jamais en silence (BL-03).
+          const motif = motifRejet(decision);
+          if (motif) afficher(t('messages.mutationRejetee', { motif }));
+          continue;
+        }
         if (decision.sort === 'conflit') {
           restante.push({
             ...m,
@@ -100,7 +110,7 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
     } finally {
       enCours.current = false;
     }
-  }, [qc]);
+  }, [qc, t, afficher]);
 
   // Chargement initial de la file + état réseau, puis abonnement aux changements.
   useEffect(() => {

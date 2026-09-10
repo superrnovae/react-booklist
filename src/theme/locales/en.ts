@@ -78,6 +78,7 @@ const en: Traductions = {
     suppressionAnnulable: 'Book deleted. Undo?',
     champObligatoire: 'This field is required.',
     anneeInvalide: 'Invalid year (1450 – next year).',
+    mutationRejetee: 'Offline change rejected by the server: {{motif}}',
   },
   reseau: {
     enLigne: 'Online',

@@ -10,6 +10,16 @@ jest.mock('@/services/reseau', () => ({
   lireEtatReseau: jest.fn(async () => true),
   surChangementReseau: jest.fn(() => () => {}),
 }));
+// La snackbar réelle dépend de l'animation (Animated.timing, act() non
+// concurrent en test) et son texte dépend de la langue résolue au démarrage
+// (theme/i18n.ts lit expo-localization, qui varie selon la machine/l'OS).
+// BL-03 ne prouve pas un rendu pixel précis : on vérifie que le motif est
+// bien transmis à la snackbar, indépendamment de la langue ou du rendu.
+const mockAfficher = jest.fn();
+jest.mock('@/features/ui/Snackbar', () => ({
+  useSnackbar: () => ({ afficher: mockAfficher }),
+  FournisseurSnackbar: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
@@ -52,6 +62,8 @@ const mutationModifiee: Mutation = {
 
 function enveloppe() {
   const client = creerClientTest();
+  // useSnackbar est mocké ci-dessus (module entier) : plus besoin du vrai
+  // FournisseurSnackbar pour satisfaire son contexte.
   return ({ children }: { children: ReactNode }) => (
     <EnveloppeQuery client={client}>
       <FournisseurSync>{children}</FournisseurSync>
@@ -61,6 +73,7 @@ function enveloppe() {
 
 beforeEach(async () => {
   synchroniserMock.mockReset();
+  mockAfficher.mockReset();
   await AsyncStorage.clear();
 });
 
@@ -129,5 +142,57 @@ describe('FournisseurSync — persistance des conflits (BL-02)', () => {
 
     const relue = await chargerFile();
     expect(relue).toHaveLength(0);
+  });
+});
+
+describe('FournisseurSync — motif d’un rejet de validation (BL-03)', () => {
+  it('affiche le motif au lieu de retirer la mutation en silence', async () => {
+    await sauverFile([mutationModifiee]);
+
+    synchroniserMock.mockResolvedValue({
+      resultats: [{ id: 'm1', statut: 'erreur', champs: { titre: 'obligatoire' } }],
+      resume: { total: 1, ok: 0, conflits: 0, erreurs: 1 },
+      serveurLe: '2026-01-01T00:05:00.000Z',
+    });
+
+    const { result, unmount } = await renderHook(() => useSync(), { wrapper: enveloppe() });
+    await waitFor(() => expect(result.current.file).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.synchroniser();
+    });
+
+    // La mutation, invalide côté serveur, est bien retirée...
+    expect(result.current.file).toHaveLength(0);
+    expect(result.current.conflits).toHaveLength(0);
+    // ...mais le libraire est prévenu, pas laissé dans le silence : le motif
+    // (nom de champ + raison serveur, non traduit) atteint bien la snackbar.
+    expect(mockAfficher).toHaveBeenCalledTimes(1);
+    expect(mockAfficher.mock.calls[0][0]).toMatch(/titre.*:.*obligatoire/i);
+    unmount();
+  });
+
+  it('ne montre rien pour une erreur transitoire (retentée, pas retirée)', async () => {
+    await sauverFile([mutationModifiee]);
+
+    synchroniserMock.mockResolvedValue({
+      resultats: [{ id: 'm1', statut: 'erreur', message: 'service indisponible' }],
+      resume: { total: 1, ok: 0, conflits: 0, erreurs: 1 },
+      serveurLe: '2026-01-01T00:05:00.000Z',
+    });
+
+    const { result, unmount } = await renderHook(() => useSync(), { wrapper: enveloppe() });
+    await waitFor(() => expect(result.current.file).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.synchroniser();
+    });
+
+    // Erreur transitoire (pas de `champs`) : la mutation reste en file pour
+    // un prochain essai, et n'est pas confondue avec un rejet définitif —
+    // donc pas de snackbar de rejet affiché.
+    expect(result.current.file).toHaveLength(1);
+    expect(mockAfficher).not.toHaveBeenCalled();
+    unmount();
   });
 });

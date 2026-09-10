@@ -76,6 +76,7 @@ const fr = {
     suppressionAnnulable: 'Ouvrage supprimé. Annuler ?',
     champObligatoire: 'Ce champ est obligatoire.',
     anneeInvalide: 'Année invalide (1450 – année prochaine).',
+    mutationRejetee: 'Modification hors ligne refusée par le serveur : {{motif}}',
   },
   reseau: {
     enLigne: 'En ligne',
