@@ -1,0 +1,43 @@
+# Blueprint Render pour héberger publiquement api-books-v2 — voir docs/DEPLOIEMENT.md.
+#
+# api-books-v2/ n'est jamais modifié : ce fichier décrit uniquement comment le
+# faire tourner ailleurs que localement. Deux écarts contournés ici, tous deux
+# documentés dans docs/API-ECARTS.md :
+#   - data/ n'est pas versionné et db.js ne le crée pas → `mkdir -p data`.
+#   - le jeu de données n'est pas persistant sur le plan gratuit (pas de disque
+#     attaché) → reseeder à chaque démarrage rend l'état prévisible plutôt que
+#     de démarrer avec une base vide et aucun compte.
+#
+# Une fois le service créé sur Render à partir de ce blueprint, copier son URL
+# (https://<nom-du-service>.onrender.com) dans la variable de dépôt GitHub
+# EXPO_PUBLIC_API_URL (Settings → Secrets and variables → Actions → Variables)
+# pour que le site GitHub Pages puisse s'y connecter.
+
+services:
+  - type: web
+    name: booklist-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: api-books-v2
+    buildCommand: npm ci
+    startCommand: mkdir -p data && node src/seed.js && node src/server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      # Comptes de test publiés par le sujet (editeur@booklist.fr /
+      # lecteur@booklist.fr) : laisser l'authentification désactivée par
+      # défaut pour une démo publique simple à parcourir. Passer à "true"
+      # depuis le tableau de bord Render pour démontrer le lot 4.
+      - key: AUTH_REQUIRED
+        value: "false"
+      # Secrets JWT générés et gérés par Render — jamais commités, jamais
+      # visibles dans ce fichier. Sans ceci, le serveur retombe sur la valeur
+      # de développement codée en dur dans middleware.js (publique, dans le
+      # dépôt) : à éviter pour un service exposé sur internet.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
