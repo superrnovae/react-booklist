@@ -51,8 +51,8 @@ export default function EcranStats() {
     return (
       <View style={styles.corps}>
         {horsLigne ? (
-          <View style={[styles.badge, { backgroundColor: palette.surfaceEnfoncee }]}>
-            <Texte variante="legende" couleur="avertissement">
+          <View style={[styles.badge, { backgroundColor: palette.avertissementConteneur }]}>
+            <Texte variante="legende" couleur="avertissementTexte">
               {t('reseau.horsLigne')} · {t('stats.majLe', { date: dateMaj })}
             </Texte>
           </View>
@@ -85,8 +85,10 @@ export default function EcranStats() {
   }
 
   function Kpi({ libelle, valeur }: { libelle: string; valeur: string }) {
+    const palette = usePalette();
+
     return (
-      <Carte style={styles.kpi}>
+      <Carte style={[styles.kpi, { backgroundColor: palette.surfaceHaute }]}>
         <Texte variante="titre">{valeur}</Texte>
         <Texte variante="legende" couleur="texteSecondaire">
           {libelle}
@@ -97,10 +99,10 @@ export default function EcranStats() {
 }
 
 const styles = StyleSheet.create({
-  contenu: { padding: espacements.lg, gap: espacements.lg, flexGrow: 1 },
+  contenu: { padding: espacements.lg, gap: espacements.lg, flexGrow: 1, width: '100%', maxWidth: 920, alignSelf: 'center' },
   chargement: { gap: espacements.lg },
   corps: { gap: espacements.lg },
-  badge: { padding: espacements.sm, borderRadius: 8, alignItems: 'center' },
+  badge: { padding: espacements.sm, borderRadius: 999, alignItems: 'center' },
   kpis: { flexDirection: 'row', gap: espacements.md },
   kpi: { flex: 1, alignItems: 'center', gap: espacements.xs },
   carte: { gap: espacements.md },

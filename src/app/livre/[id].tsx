@@ -2,27 +2,27 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import {
-    Bouton,
-    Coeur,
-    CouvertureImage,
-    EtatErreur,
-    EtatVide,
-    EtoilesNote,
-    Squelette,
-    Texte,
+  Bouton,
+  Coeur,
+  CouvertureImage,
+  EtatErreur,
+  EtatVide,
+  EtoilesNote,
+  Squelette,
+  Texte,
 } from '@/components';
 import { ErreurReseau } from '@/domain/erreurs';
 import type { Livre } from '@/domain/types';
-import {
-    BlocEnrichissement,
-    useBasculeChamp,
-    useLivre,
-    useNoterLivre,
-    useSuppressionAnnulable,
-} from '@/features/books';
-import { confirmer } from '@/features/ui/confirmer';
 import { useAuth } from '@/features/auth';
+import {
+  BlocEnrichissement,
+  useBasculeChamp,
+  useLivre,
+  useNoterLivre,
+  useSuppressionAnnulable,
+} from '@/features/books';
 import { SectionNotes } from '@/features/notes';
+import { useConfirmation } from '@/features/ui/Confirmation';
 import { resoudreCouverture } from '@/services/couverture';
 import { useI18n } from '@/theme/formats';
 import { espacements } from '@/theme/tokens';
@@ -88,14 +88,16 @@ function Fiche({
   const favori = useBasculeChamp(livre, 'favori');
   const noter = useNoterLivre(livre);
   const supprimer = useSuppressionAnnulable();
+  const { demanderConfirmation } = useConfirmation();
 
   const demanderSuppression = async () => {
-    const ok = await confirmer(
-      t('actions.supprimer'),
-      livre.titre,
-      t('actions.supprimer'),
-      t('actions.annuler'),
-    );
+    const ok = await demanderConfirmation({
+      titre: t('confirmations.supprimerLivreTitre'),
+      message: t('confirmations.supprimerLivreMessage', { titre: livre.titre }),
+      valider: t('actions.supprimer'),
+      annuler: t('actions.annuler'),
+      destructive: true,
+    });
     if (ok) supprimer(livre.id, onSupprimer);
   };
 
@@ -131,6 +133,7 @@ function Fiche({
           titre={livre.lu ? t('livre.marquerNonLu') : t('livre.marquerLu')}
           onPress={() => lu.mutate()}
           variante="secondaire"
+          icone="appliquer"
         />
       ) : null}
 
@@ -140,12 +143,13 @@ function Fiche({
 
       {peutEcrire ? (
         <View style={styles.actions}>
-          <Bouton titre={t('actions.modifier')} onPress={onModifier} style={styles.flex} />
+          <Bouton titre={t('actions.modifier')} onPress={onModifier} style={styles.flex} icone="modifier" />
           <Bouton
             titre={t('actions.supprimer')}
             onPress={demanderSuppression}
             variante="danger"
             style={styles.flex}
+            icone="supprimer"
           />
         </View>
       ) : null}

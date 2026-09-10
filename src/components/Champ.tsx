@@ -4,7 +4,7 @@
  */
 import { usePalette } from '@/theme/ThemeProvider';
 import { CIBLE_TACTILE, espacements, rayons, typographie } from '@/theme/tokens';
-import { forwardRef } from 'react';
+import { forwardRef, useState } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 import { Texte } from './Texte';
 
@@ -14,10 +14,13 @@ type Props = TextInputProps & {
 };
 
 export const Champ = forwardRef<TextInput, Props>(function Champ(
-  { libelle, erreur, style, ...reste },
+  { libelle, erreur, style, onBlur, onFocus, ...reste },
   ref,
 ) {
   const palette = usePalette();
+  const [actif, setActif] = useState(false);
+  const bordure = erreur ? palette.danger : actif ? palette.primaire : palette.bordure;
+
   return (
     <View style={styles.groupe}>
       <Texte variante="legende" couleur="texteSecondaire">
@@ -32,11 +35,19 @@ export const Champ = forwardRef<TextInput, Props>(function Champ(
           styles.champ,
           {
             color: palette.texte,
-            backgroundColor: palette.surface,
-            borderColor: erreur ? palette.danger : palette.bordure,
+            backgroundColor: palette.surfaceHaute,
+            borderColor: bordure,
           },
           style,
         ]}
+        onFocus={(e) => {
+          setActif(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setActif(false);
+          onBlur?.(e);
+        }}
         {...reste}
       />
       {erreur ? (
@@ -55,7 +66,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: rayons.md,
     paddingHorizontal: espacements.md,
-    paddingVertical: espacements.sm,
+    paddingVertical: espacements.xs,
     fontSize: typographie.corps.taille,
+    lineHeight: typographie.corps.hauteur,
   },
 });

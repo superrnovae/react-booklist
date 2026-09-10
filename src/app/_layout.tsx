@@ -13,6 +13,7 @@ import { queryClient } from '@/features/query/client';
 import { creerPersister } from '@/features/query/persister';
 import { FournisseurAuthentification, useAuth } from '@/features/auth';
 import { FournisseurSync, IndicateurSync } from '@/features/sync';
+import { FournisseurConfirmation } from '@/features/ui/Confirmation';
 import { FournisseurSnackbar } from '@/features/ui/Snackbar';
 import { restaurerLangue } from '@/theme/i18n';
 import { FournisseurTheme, usePalette, useTheme } from '@/theme/ThemeProvider';
@@ -44,8 +45,9 @@ function Navigation() {
       <IndicateurSync />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: palette.fond },
+          headerStyle: { backgroundColor: palette.surface },
           headerTintColor: palette.texte,
+          headerTitleStyle: { fontSize: 18, fontWeight: '700' },
           contentStyle: { backgroundColor: palette.fond },
           headerShadowVisible: false,
         }}
@@ -67,15 +69,17 @@ export default function RootLayout() {
       >
         <FournisseurTheme>
           <FournisseurSnackbar>
-            <FournisseurAuthentification>
-              <FournisseurSync>
-                <ErrorBoundary>
-                  <Garde>
-                    <Navigation />
-                  </Garde>
-                </ErrorBoundary>
-              </FournisseurSync>
-            </FournisseurAuthentification>
+            <FournisseurConfirmation>
+              <FournisseurAuthentification>
+                <FournisseurSync>
+                  <ErrorBoundary>
+                    <Garde>
+                      <Navigation />
+                    </Garde>
+                  </ErrorBoundary>
+                </FournisseurSync>
+              </FournisseurAuthentification>
+            </FournisseurConfirmation>
           </FournisseurSnackbar>
         </FournisseurTheme>
       </PersistQueryClientProvider>

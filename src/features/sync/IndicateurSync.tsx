@@ -5,7 +5,7 @@
 import { Texte } from '@/components';
 import { usePalette } from '@/theme/ThemeProvider';
 import { useI18n } from '@/theme/formats';
-import { espacements } from '@/theme/tokens';
+import { espacements, rayons, type Palette } from '@/theme/tokens';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSync } from './SyncProvider';
@@ -19,8 +19,14 @@ export function IndicateurSync() {
   const nbConflits = conflits.length;
   const nbAttente = file.length;
 
-  const fond = nbConflits > 0 ? palette.danger : !enLigne ? palette.avertissement : palette.succes;
-  const couleur = nbConflits > 0 ? 'dangerTexte' : 'texteInverse';
+  const fond =
+    nbConflits > 0
+      ? palette.dangerConteneur
+      : !enLigne
+        ? palette.avertissementConteneur
+        : palette.succesConteneur;
+  const couleur: keyof Palette =
+    nbConflits > 0 ? 'dangerConteneurTexte' : !enLigne ? 'avertissementTexte' : 'succesTexte';
 
   const message =
     nbConflits > 0
@@ -34,10 +40,12 @@ export function IndicateurSync() {
           : t('reseau.enLigne');
 
   const contenu = (
-    <View style={[styles.barre, { backgroundColor: fond }]} accessibilityLiveRegion="polite">
-      <Texte variante="legende" couleur={couleur}>
-        {enLigne ? '●' : '○'} {message}
-      </Texte>
+    <View style={[styles.conteneur, { backgroundColor: palette.surface, borderColor: palette.bordure }]}>
+      <View style={[styles.barre, { backgroundColor: fond }]} accessibilityLiveRegion="polite">
+        <Texte variante="legende" couleur={couleur}>
+          {enLigne ? '●' : '○'} {message}
+        </Texte>
+      </View>
     </View>
   );
 
@@ -56,5 +64,15 @@ export function IndicateurSync() {
 }
 
 const styles = StyleSheet.create({
-  barre: { paddingVertical: espacements.xs, paddingHorizontal: espacements.lg, alignItems: 'center' },
+  conteneur: {
+    paddingVertical: espacements.xs,
+    alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  barre: {
+    paddingVertical: 2,
+    paddingHorizontal: espacements.md,
+    alignItems: 'center',
+    borderRadius: rayons.rond,
+  },
 });

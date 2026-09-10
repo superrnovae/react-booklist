@@ -57,7 +57,12 @@ export default function EcranReglages() {
           <Texte variante="legende" couleur="texteSecondaire">
             {utilisateur.role === 'editeur' ? t('auth.editeur') : t('auth.lecteur')}
           </Texte>
-          <Bouton titre={t('auth.seDeconnecter')} onPress={() => void deconnexion()} variante="danger" />
+          <Bouton
+            titre={t('auth.seDeconnecter')}
+            onPress={() => void deconnexion()}
+            variante="danger"
+            icone="deconnexion"
+          />
         </Carte>
       ) : null}
 

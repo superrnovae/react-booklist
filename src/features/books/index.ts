@@ -9,5 +9,5 @@ export * from './mutations';
 export * from './queries';
 export * from './useActionsLivre';
 export * from './useEnrichissement';
+export * from './useModeAffichageLivres';
 export * from './useSuppressionAnnulable';
-

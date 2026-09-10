@@ -39,6 +39,7 @@ export default function EcranNouveau() {
         enCours={enCours}
         erreursServeur={erreursServeur}
         libelleAction={t('actions.ajouter')}
+        iconeAction="ajouter"
         onSoumettre={soumettre}
       />
     </ScrollView>
@@ -46,5 +47,5 @@ export default function EcranNouveau() {
 }
 
 const styles = StyleSheet.create({
-  contenu: { padding: espacements.lg },
+  contenu: { padding: espacements.lg, width: '100%', maxWidth: 720, alignSelf: 'center' },
 });

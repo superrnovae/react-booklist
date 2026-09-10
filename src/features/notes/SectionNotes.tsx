@@ -41,13 +41,17 @@ export function SectionNotes({ livreId, lectureSeule = false }: { livreId: strin
             placeholderTextColor={palette.texteSecondaire}
             multiline
             accessibilityLabel={t('notes.champ')}
-            style={[styles.zone, { color: palette.texte, borderColor: palette.bordure }]}
+            style={[
+              styles.zone,
+              { color: palette.texte, backgroundColor: palette.surfaceHaute, borderColor: palette.bordure },
+            ]}
           />
           <Bouton
             titre={t('notes.ajouter')}
             onPress={soumettre}
             enCours={ajouter.isPending}
             desactive={texte.trim().length === 0}
+            icone="ajouter"
           />
         </Carte>
       )}
@@ -81,6 +85,7 @@ export function SectionNotes({ livreId, lectureSeule = false }: { livreId: strin
                     onPress={() => supprimer.mutate(note.id)}
                     variante="fantome"
                     style={styles.suppr}
+                    icone="supprimer"
                   />
                 )}
               </View>
@@ -101,6 +106,7 @@ const styles = StyleSheet.create({
     borderRadius: rayons.md,
     padding: espacements.md,
     fontSize: typographie.corps.taille,
+    lineHeight: typographie.corps.hauteur,
     textAlignVertical: 'top',
   },
   chargement: { gap: espacements.sm },

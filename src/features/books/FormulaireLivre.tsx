@@ -3,11 +3,11 @@
  * Validation typée, message par champ, soumission désactivée pendant l'envoi,
  * remontée des erreurs 422 de l'API sur les bons champs.
  */
-import { Bouton, Champ, EtoilesNote, Texte } from '@/components';
+import { Bouton, Carte, Champ, EtoilesNote, Texte, type IconeNom } from '@/components';
 import type { SaisieLivre } from '@/domain/types';
 import { usePalette } from '@/theme/ThemeProvider';
 import { useI18n } from '@/theme/formats';
-import { espacements } from '@/theme/tokens';
+import { espacements, rayons } from '@/theme/tokens';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -19,6 +19,7 @@ type Props = {
   enCours: boolean;
   erreursServeur?: Record<string, string>;
   libelleAction: string;
+  iconeAction?: IconeNom;
   onSoumettre: (saisie: SaisieLivre) => void;
 };
 
@@ -29,6 +30,7 @@ export function FormulaireLivre({
   enCours,
   erreursServeur,
   libelleAction,
+  iconeAction,
   onSoumettre,
 }: Props) {
   const { t } = useI18n();
@@ -67,7 +69,7 @@ export function FormulaireLivre({
   };
 
   return (
-    <View style={styles.form}>
+    <Carte style={styles.form}>
       {CHAMPS.map((cle) => (
         <Controller
           key={cle}
@@ -95,13 +97,14 @@ export function FormulaireLivre({
           control={control}
           name={cle}
           render={({ field }) => (
-            <View style={styles.bascule}>
+            <View style={[styles.bascule, { backgroundColor: palette.surfaceHaute, borderColor: palette.bordure }]}>
               <Texte>{t(`livre.${cle}`)}</Texte>
               <Switch
                 value={field.value as boolean}
                 onValueChange={field.onChange}
                 accessibilityLabel={t(`livre.${cle}`)}
-                trackColor={{ true: palette.primaire, false: palette.surfaceEnfoncee }}
+                trackColor={{ true: palette.primaireConteneur, false: palette.surfaceEnfoncee }}
+                thumbColor={field.value ? palette.primaire : palette.bordure}
               />
             </View>
           )}
@@ -112,7 +115,7 @@ export function FormulaireLivre({
         control={control}
         name="note"
         render={({ field }) => (
-          <View style={styles.bascule}>
+          <View style={[styles.bascule, { backgroundColor: palette.surfaceHaute, borderColor: palette.bordure }]}>
             <Texte>{t('livre.note')}</Texte>
             <EtoilesNote
               valeur={field.value as number | null}
@@ -130,13 +133,22 @@ export function FormulaireLivre({
         desactive={formState.isSubmitting}
         testID="soumettre-livre"
         style={styles.action}
+        icone={iconeAction}
       />
-    </View>
+    </Carte>
   );
 }
 
 const styles = StyleSheet.create({
-  form: { gap: espacements.lg },
-  bascule: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  form: { gap: espacements.md },
+  bascule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: rayons.lg,
+    paddingVertical: espacements.xs,
+    paddingHorizontal: espacements.md,
+  },
   action: { marginTop: espacements.sm },
 });

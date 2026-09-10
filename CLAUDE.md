@@ -28,6 +28,14 @@ cliente de l'API `api-books-v2`. Sujet complet : `SPECIFICATION.md`.
 `app/` routing → `features/` → `hooks/` → `services/` (seul à connaître l'API) → `domain/` (pur).
 `components/` = UI pure. `theme/` = tokens + i18n. **Aucun fetch/URL hors de `services/`.**
 
+## Direction UI/UX
+- Référence visuelle : expérience Material moderne inspirée Goodreads / StoryGraph / Hardcover, avec découverte par étagères plutôt que simples listes.
+- Bibliothèque : conserver les chips rapides `Tous`, `Coups de cœur`, `Lus`, `Non lus`, `Mieux notés`, `Récents`, plus les tris serveur existants.
+- Affichage : maintenir le sélecteur segmenté `Liste` / `Grille`, persister le choix côté client et garder les `testID` E2E stables.
+- Cartes : couverture dominante, badges statut/favori/note, hover lift discret, pression/ripple-like via surfaces Material.
+- Actions : utiliser `Icone` + `Bouton` pour les CTA (`Ajouter`, `Modifier`, `Supprimer`, `Réessayer`, `Enregistrer`, `Synchroniser`) afin d'éviter les glyphes dispersés.
+- Micro-interactions : rester subtil (120-220 ms, easing Material quand possible) : snackbar slide/fade, cœur pop, étoiles pressées, skeleton animé.
+
 ## API — points clés
 - `GET /books` paginé `{ items, page, limit, total, totalPages }` ; params `page,limit,q,status(lu|nonlu),favori,auteur,sort,order`.
 - Champ **`titre`** (pas `nom`). Ouvrage porte `version` + `updatedAt`.

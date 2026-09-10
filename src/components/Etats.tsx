@@ -52,8 +52,13 @@ export function EtatErreur({
   libelleReessai: string;
   onReessayer: () => void;
 }) {
+  const palette = usePalette();
+
   return (
-    <View style={styles.centre} accessibilityRole="alert">
+    <View
+      style={[styles.centre, { backgroundColor: palette.dangerConteneur, borderColor: palette.danger }]}
+      accessibilityRole="alert"
+    >
       <Texte variante="sousTitre" couleur="danger">
         {titre}
       </Texte>
@@ -62,14 +67,22 @@ export function EtatErreur({
           {message}
         </Texte>
       ) : null}
-      <Bouton titre={libelleReessai} onPress={onReessayer} variante="secondaire" style={styles.action} />
+      <Bouton
+        titre={libelleReessai}
+        onPress={onReessayer}
+        variante="secondaire"
+        style={styles.action}
+        icone="rafraichir"
+      />
     </View>
   );
 }
 
 export function EtatVide({ titre, message }: { titre: string; message?: string }) {
+  const palette = usePalette();
+
   return (
-    <View style={styles.centre}>
+    <View style={[styles.centre, { backgroundColor: palette.surfaceHaute, borderColor: palette.bordure }]}>
       <Texte variante="sousTitre">{titre}</Texte>
       {message ? (
         <Texte couleur="texteSecondaire" style={styles.message}>
@@ -87,6 +100,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: espacements.xl,
     gap: espacements.sm,
+    borderRadius: rayons.lg,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   message: { textAlign: 'center' },
   action: { marginTop: espacements.md, minWidth: 160 },

@@ -16,7 +16,9 @@ export function Texte({ variante = 'corps', couleur = 'texte', style, ...reste }
   const palette = usePalette();
   const base: TextStyle = {
     fontSize: typographie[variante].taille,
+    lineHeight: typographie[variante].hauteur,
     fontWeight: typographie[variante].poids,
+    letterSpacing: typographie[variante].espacement,
     color: palette[couleur],
   };
   return <Text style={[base, style]} {...reste} />;

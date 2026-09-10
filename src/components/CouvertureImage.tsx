@@ -21,12 +21,16 @@ export function CouvertureImage({ uri, titre, largeur = 56, hauteur = 84 }: Prop
   const palette = usePalette();
   const [echec, setEchec] = useState(false);
 
-  const cadre = { width: largeur, height: hauteur, borderRadius: rayons.sm };
+  const cadre = { width: largeur, height: hauteur, borderRadius: rayons.md };
 
   if (echec) {
     return (
       <View
-        style={[cadre, styles.repli, { backgroundColor: palette.surfaceEnfoncee }]}
+        style={[
+          cadre,
+          styles.repli,
+          { backgroundColor: palette.surfaceEnfoncee, borderColor: palette.bordure },
+        ]}
         accessibilityRole="image"
         accessibilityLabel={titre}
       >
@@ -40,7 +44,7 @@ export function CouvertureImage({ uri, titre, largeur = 56, hauteur = 84 }: Prop
   return (
     <Image
       source={{ uri }}
-      style={cadre}
+      style={[cadre, { backgroundColor: palette.surfaceEnfoncee }]}
       contentFit="cover"
       transition={150}
       onError={() => setEchec(true)}
@@ -51,6 +55,6 @@ export function CouvertureImage({ uri, titre, largeur = 56, hauteur = 84 }: Prop
 }
 
 const styles = StyleSheet.create({
-  repli: { alignItems: 'center', justifyContent: 'center', padding: 4 },
+  repli: { alignItems: 'center', justifyContent: 'center', padding: 4, borderWidth: StyleSheet.hairlineWidth },
   repliTexte: { textAlign: 'center' },
 });

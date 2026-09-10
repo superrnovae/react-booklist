@@ -3,7 +3,7 @@
  * Accessible : rôle ajustable, valeur exposée, zones tactiles suffisantes.
  */
 import { usePalette } from '@/theme/ThemeProvider';
-import { CIBLE_TACTILE } from '@/theme/tokens';
+import { CIBLE_TACTILE, rayons } from '@/theme/tokens';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Texte } from './Texte';
 
@@ -41,7 +41,11 @@ export function EtoilesNote({ valeur, onChange, libelle, taille = 28 }: Props) {
             accessibilityLabel={`${libelle} : ${n}`}
             onPress={() => onChange(n === note ? 0 : n)}
             hitSlop={6}
-            style={styles.zone}
+            style={({ pressed }) => [
+              styles.zone,
+              pressed && { backgroundColor: palette.surfaceEnfoncee },
+              pressed && styles.presse,
+            ]}
           >
             {etoile}
           </Pressable>
@@ -53,5 +57,12 @@ export function EtoilesNote({ valeur, onChange, libelle, taille = 28 }: Props) {
 
 const styles = StyleSheet.create({
   rangee: { flexDirection: 'row', alignItems: 'center' },
-  zone: { minWidth: CIBLE_TACTILE, minHeight: CIBLE_TACTILE, alignItems: 'center', justifyContent: 'center' },
+  zone: {
+    minWidth: CIBLE_TACTILE,
+    minHeight: CIBLE_TACTILE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: rayons.rond,
+  },
+  presse: { transform: [{ scale: 1.1 }] },
 });

@@ -11,19 +11,22 @@ import { useCallback } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { LivreCarte } from './LivreCarte';
 import { useLivresInfinis, type FiltresListe } from './queries';
+import type { ModeAffichageLivres } from './useModeAffichageLivres';
 
 type Props = {
   filtres: Partial<FiltresListe>;
   onOuvrir: (id: string) => void;
   entete?: React.ReactElement;
+  modeAffichage?: ModeAffichageLivres;
 };
 
-function SquelettesListe() {
+function SquelettesListe({ modeAffichage = 'ligne' }: { modeAffichage?: ModeAffichageLivres }) {
+  const grille = modeAffichage === 'grille';
   return (
-    <View style={styles.contenu}>
-      {Array.from({ length: 8 }).map((_, i) => (
-        <View key={i} style={styles.squeletteLigne}>
-          <Squelette hauteur={84} largeur={56} />
+    <View style={[styles.contenu, grille && styles.contenuGrille, grille && styles.squelettesGrille]}>
+      {Array.from({ length: grille ? 6 : 8 }).map((_, i) => (
+        <View key={i} style={grille ? styles.squeletteGrille : styles.squeletteLigne}>
+          <Squelette hauteur={grille ? 190 : 86} largeur={grille ? '100%' : 58} />
           <View style={styles.squeletteInfos}>
             <Squelette hauteur={16} largeur="70%" />
             <Squelette hauteur={12} largeur="45%" />
@@ -34,20 +37,25 @@ function SquelettesListe() {
   );
 }
 
-export function ListeLivres({ filtres, onOuvrir, entete }: Props) {
+export function ListeLivres({ filtres, onOuvrir, entete, modeAffichage = 'ligne' }: Props) {
   const { t } = useI18n();
   const q = useLivresInfinis(filtres);
+  const grille = modeAffichage === 'grille';
 
   const rendre = useCallback(
-    ({ item }: { item: Livre }) => <LivreCarte livre={item} onOuvrir={onOuvrir} />,
-    [onOuvrir],
+    ({ item }: { item: Livre }) => (
+      <View style={grille ? styles.celluleGrille : undefined}>
+        <LivreCarte livre={item} onOuvrir={onOuvrir} mode={modeAffichage} />
+      </View>
+    ),
+    [grille, modeAffichage, onOuvrir],
   );
 
   if (q.isLoading) {
     return (
       <View style={styles.plein}>
         {entete}
-        <SquelettesListe />
+        <SquelettesListe modeAffichage={modeAffichage} />
       </View>
     );
   }
@@ -70,12 +78,15 @@ export function ListeLivres({ filtres, onOuvrir, entete }: Props) {
 
   return (
     <FlatList
+      key={modeAffichage}
       data={q.livres}
       keyExtractor={(l) => l.id}
       renderItem={rendre}
+      numColumns={grille ? 2 : 1}
+      columnWrapperStyle={grille ? styles.rangeeGrille : undefined}
       ListHeaderComponent={entete}
-      contentContainerStyle={styles.contenu}
-      ItemSeparatorComponent={() => <View style={styles.sep} />}
+      contentContainerStyle={[styles.contenu, grille && styles.contenuGrille]}
+      ItemSeparatorComponent={() => <View style={grille ? styles.sepGrille : styles.sep} />}
       onEndReachedThreshold={0.4}
       onEndReached={() => {
         if (q.hasNextPage && !q.isFetchingNextPage) void q.fetchNextPage();
@@ -104,9 +115,15 @@ export function ListeLivres({ filtres, onOuvrir, entete }: Props) {
 
 const styles = StyleSheet.create({
   plein: { flex: 1 },
-  contenu: { padding: espacements.lg, gap: 0, flexGrow: 1 },
+  contenu: { padding: espacements.lg, gap: 0, flexGrow: 1, width: '100%', maxWidth: 920, alignSelf: 'center' },
+  contenuGrille: { maxWidth: 1120 },
   sep: { height: espacements.sm },
+  sepGrille: { height: espacements.md },
+  rangeeGrille: { gap: espacements.md },
+  celluleGrille: { flex: 1, minWidth: 0 },
+  squelettesGrille: { flexDirection: 'row', flexWrap: 'wrap', gap: espacements.md },
   squeletteLigne: { flexDirection: 'row', gap: espacements.md, marginBottom: espacements.md },
+  squeletteGrille: { width: '48%', minWidth: 220, gap: espacements.sm, marginBottom: espacements.md },
   squeletteInfos: { flex: 1, gap: espacements.sm, justifyContent: 'center' },
   pied: { paddingVertical: espacements.lg, alignItems: 'center', gap: espacements.sm },
 });

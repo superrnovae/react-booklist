@@ -116,7 +116,7 @@ function CarteConflit({ conflit }: { conflit: Conflit }) {
         ))
       )}
 
-      <Bouton titre={t('conflit.appliquer')} onPress={appliquer} enCours={enCours} />
+      <Bouton titre={t('conflit.appliquer')} onPress={appliquer} enCours={enCours} icone="appliquer" />
     </Carte>
   );
 }

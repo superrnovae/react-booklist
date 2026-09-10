@@ -29,7 +29,7 @@ export function GraphiqueBarres({ donnees }: { donnees: Barre[] }) {
                 width: `${(d.valeur / max) * 100}%`,
                 height: '100%',
                 backgroundColor: d.couleur ?? palette.primaire,
-                borderRadius: rayons.sm,
+                borderRadius: rayons.rond,
               }}
             />
           </View>
@@ -48,6 +48,6 @@ const styles = StyleSheet.create({
   grille: { gap: espacements.sm },
   ligne: { flexDirection: 'row', alignItems: 'center', gap: espacements.sm },
   etiquette: { width: 92 },
-  piste: { flex: 1, height: 16, borderRadius: rayons.sm, overflow: 'hidden' },
+  piste: { flex: 1, height: 10, borderRadius: rayons.rond, overflow: 'hidden' },
   valeur: { width: 40, alignItems: 'flex-end' },
 });

@@ -1,19 +1,19 @@
-import { useState } from 'react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import type { SaisieLivre } from '@/domain/types';
+import { EtatErreur, Squelette } from '@/components';
 import { ErreurConflit, ErreurValidation } from '@/domain/erreurs';
+import type { SaisieLivre } from '@/domain/types';
 import {
-  FormulaireLivre,
-  useActionsLivre,
-  useLivre,
-  type ValeursFormulaireLivre,
+    FormulaireLivre,
+    useActionsLivre,
+    useLivre,
+    type ValeursFormulaireLivre,
 } from '@/features/books';
 import { useSnackbar } from '@/features/ui/Snackbar';
-import { EtatErreur, Squelette } from '@/components';
-import { espacements } from '@/theme/tokens';
 import { useI18n } from '@/theme/formats';
+import { espacements } from '@/theme/tokens';
 
 export default function EcranModifier() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -78,6 +78,7 @@ export default function EcranModifier() {
           enCours={enCours}
           erreursServeur={erreursServeur}
           libelleAction={t('actions.enregistrer')}
+          iconeAction="appliquer"
           onSoumettre={soumettre}
         />
       )}
@@ -86,6 +87,6 @@ export default function EcranModifier() {
 }
 
 const styles = StyleSheet.create({
-  contenu: { padding: espacements.lg },
+  contenu: { padding: espacements.lg, width: '100%', maxWidth: 720, alignSelf: 'center' },
   squelette: { gap: espacements.lg },
 });

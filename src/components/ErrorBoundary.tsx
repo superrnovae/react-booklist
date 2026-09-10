@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <Texte couleur="texteSecondaire" style={styles.message}>
           {this.state.erreur.message}
         </Texte>
-        <Bouton titre="Réessayer" onPress={this.reinitialiser} style={styles.action} />
+        <Bouton titre="Réessayer" onPress={this.reinitialiser} style={styles.action} icone="rafraichir" />
       </View>
     );
   }

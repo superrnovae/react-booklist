@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Bouton, Carte, Champ, Texte } from '@/components';
 import { ErreurAuth } from '@/domain/erreurs';
 import { useAuth } from '@/features/auth';
+import { usePalette } from '@/theme/ThemeProvider';
 import { useI18n } from '@/theme/formats';
 import { espacements } from '@/theme/tokens';
 
@@ -12,6 +13,7 @@ export default function EcranConnexion() {
   const router = useRouter();
   const { de } = useLocalSearchParams<{ de?: string }>();
   const { t } = useI18n();
+  const palette = usePalette();
   const { connexion } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -38,8 +40,19 @@ export default function EcranConnexion() {
     <ScrollView contentContainerStyle={styles.contenu} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title: t('auth.connexion'), headerBackVisible: false }} />
 
-      <Texte variante="titre">{t('app.titre')}</Texte>
-      <Texte couleur="texteSecondaire">{t('app.sousTitre')}</Texte>
+      <View style={styles.hero}>
+        <View style={[styles.logo, { backgroundColor: palette.primaireConteneur }]}>
+          <Texte couleur="primaireConteneurTexte" variante="titre">
+            B
+          </Texte>
+        </View>
+        <Texte variante="titre" style={styles.centreTexte}>
+          {t('app.titre')}
+        </Texte>
+        <Texte couleur="texteSecondaire" style={styles.centreTexte}>
+          {t('app.sousTitre')}
+        </Texte>
+      </View>
 
       <Carte style={styles.carte}>
         <Champ
@@ -67,6 +80,7 @@ export default function EcranConnexion() {
           onPress={soumettre}
           enCours={enCours}
           desactive={email.trim().length === 0 || motDePasse.length === 0}
+          icone="connexion"
         />
       </Carte>
 
@@ -83,7 +97,18 @@ export default function EcranConnexion() {
 }
 
 const styles = StyleSheet.create({
-  contenu: { padding: espacements.lg, gap: espacements.md, flexGrow: 1, justifyContent: 'center' },
+  contenu: {
+    padding: espacements.lg,
+    gap: espacements.md,
+    flexGrow: 1,
+    justifyContent: 'center',
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+  },
+  hero: { alignItems: 'center', gap: espacements.xs, marginBottom: espacements.sm },
+  logo: { width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  centreTexte: { textAlign: 'center' },
   carte: { gap: espacements.md },
   aide: { gap: espacements.xs, marginTop: espacements.md },
 });

@@ -42,7 +42,7 @@ export function useSuppressionAnnulable() {
       afficher(t('messages.suppressionAnnulable'), {
         dureeMs: 5000,
         action: {
-          libelle: t('actions.annuler'),
+          libelle: t('actions.annulerSuppression'),
           onPress: () => {
             annule = true;
             clearTimeout(minuteur);
