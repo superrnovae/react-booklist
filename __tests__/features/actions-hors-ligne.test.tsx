@@ -43,8 +43,10 @@ function contexteSync(surcharge: Partial<ReturnType<typeof useSync>>) {
   return {
     enLigne: true,
     file: [],
+    fileNotes: [],
     conflits: [],
     enfiler: jest.fn(),
+    enfilerNote: jest.fn(),
     synchroniser: jest.fn(),
     resoudreConflit: jest.fn(),
     ...surcharge,

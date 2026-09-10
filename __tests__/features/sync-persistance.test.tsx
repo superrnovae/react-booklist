@@ -6,6 +6,9 @@
 jest.mock('@/services/api/sync', () => ({
   synchroniser: jest.fn(),
 }));
+jest.mock('@/services/api/livres', () => ({
+  ajouterNote: jest.fn(),
+}));
 jest.mock('@/services/reseau', () => ({
   lireEtatReseau: jest.fn(async () => true),
   surChangementReseau: jest.fn(() => () => {}),
@@ -26,13 +29,17 @@ import type { ReactNode } from 'react';
 
 import type { Livre } from '@/domain/types';
 import type { Mutation } from '@/domain/mutations';
+import type { MutationNote } from '@/domain/notes';
 import { FournisseurSync, useSync } from '@/features/sync/SyncProvider';
 import { chargerFile, sauverFile } from '@/features/sync/file';
+import { chargerFileNotes, sauverFileNotes } from '@/features/notes/fileNotes';
 import { AsyncStorage } from '@/services/stockage';
 import { synchroniser } from '@/services/api/sync';
+import { ajouterNote } from '@/services/api/livres';
 import { creerClientTest, EnveloppeQuery } from '../utils/rendu';
 
 const synchroniserMock = synchroniser as jest.MockedFunction<typeof synchroniser>;
+const ajouterNoteMock = ajouterNote as jest.MockedFunction<typeof ajouterNote>;
 
 function livre(surcharge: Partial<Livre> = {}): Livre {
   return {
@@ -73,6 +80,7 @@ function enveloppe() {
 
 beforeEach(async () => {
   synchroniserMock.mockReset();
+  ajouterNoteMock.mockReset();
   mockAfficher.mockReset();
   await AsyncStorage.clear();
 });
@@ -215,6 +223,48 @@ describe('FournisseurSync — synchronisation au démarrage (BL-08)', () => {
     await waitFor(() => expect(synchroniserMock).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(result.current.file).toHaveLength(0));
     expect(await chargerFile()).toHaveLength(0);
+    unmount();
+  });
+});
+
+describe('FournisseurSync — rejeu des notes de lecture hors ligne (BL-05b)', () => {
+  const noteEnAttente: MutationNote = {
+    id: 'n1',
+    type: 'note-ajout',
+    horodatage: '2026-01-01T00:00:00.000Z',
+    livreId: 'l1',
+    contenu: 'Une lecture marquante.',
+  };
+
+  it('rejoue une note en attente au démarrage, via POST /books/:id/notes (pas /sync)', async () => {
+    await sauverFileNotes([noteEnAttente]);
+    ajouterNoteMock.mockResolvedValue({
+      id: 'srv-1',
+      livreId: 'l1',
+      contenu: 'Une lecture marquante.',
+      createdAt: '2026-01-01T00:05:00.000Z',
+    });
+
+    const { result, unmount } = await renderHook(() => useSync(), { wrapper: enveloppe() });
+
+    await waitFor(() => expect(ajouterNoteMock).toHaveBeenCalledTimes(1));
+    expect(ajouterNoteMock).toHaveBeenCalledWith('l1', 'Une lecture marquante.');
+    expect(synchroniserMock).not.toHaveBeenCalled(); // pas via /sync (BL-05b)
+
+    await waitFor(() => expect(result.current.fileNotes).toHaveLength(0));
+    expect(await chargerFileNotes()).toHaveLength(0);
+    unmount();
+  });
+
+  it('garde les notes non envoyées en file si le serveur est indisponible', async () => {
+    await sauverFileNotes([noteEnAttente]);
+    ajouterNoteMock.mockRejectedValue(new Error('réseau indisponible'));
+
+    const { result, unmount } = await renderHook(() => useSync(), { wrapper: enveloppe() });
+
+    await waitFor(() => expect(ajouterNoteMock).toHaveBeenCalledTimes(1));
+    expect(result.current.fileNotes).toHaveLength(1);
+    expect(await chargerFileNotes()).toHaveLength(1);
     unmount();
   });
 });

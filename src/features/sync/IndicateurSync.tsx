@@ -14,10 +14,12 @@ export function IndicateurSync() {
   const palette = usePalette();
   const router = useRouter();
   const { t } = useI18n();
-  const { enLigne, file, conflits } = useSync();
+  const { enLigne, file, fileNotes, conflits } = useSync();
 
   const nbConflits = conflits.length;
-  const nbAttente = file.length;
+  // Les notes de lecture en attente comptent aussi (BL-05b) : le libraire
+  // doit voir tout ce qui n'est pas encore parti, pas seulement les livres.
+  const nbAttente = file.length + fileNotes.length;
 
   const fond =
     nbConflits > 0

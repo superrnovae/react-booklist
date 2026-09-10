@@ -2,6 +2,9 @@
  * Orchestration de la synchronisation hors ligne (§ Lot 4.2 / 4.3).
  * Connectivité, file persistée, rejeu par lot via POST /sync, collecte des
  * conflits pour arbitrage. La logique de décision est pure (domain/sync).
+ * Le rejeu des notes de lecture (BL-05b) est délégué à useNotesSync — file
+ * distincte, rejouée via l'appel unitaire POST /books/:id/notes plutôt que
+ * /sync (voir domain/notes.ts) — pour que ce fichier reste sous 250 lignes.
  *
  * Les conflits ne sont **pas** un état séparé : une mutation en conflit reste
  * dans la file persistée, marquée `conflit` (voir domain/mutations.ts), et
@@ -10,6 +13,7 @@
  * qu'elle n'est pas résolue (BL-02).
  */
 import type { Mutation } from '@/domain/mutations';
+import type { MutationNote } from '@/domain/notes';
 import { motifRejet, resoudreSync, type Conflit } from '@/domain/sync';
 import { clesLivres } from '@/features/books/cles';
 import { useSnackbar } from '@/features/ui/Snackbar';
@@ -28,12 +32,15 @@ import {
     type ReactNode,
 } from 'react';
 import { chargerFile, sauverFile, enfilerPersistant } from './file';
+import { useNotesSync } from './useNotesSync';
 
 type ContexteSync = {
   enLigne: boolean;
   file: Mutation[];
+  fileNotes: MutationNote[];
   conflits: Conflit[];
   enfiler: (mutation: Mutation) => Promise<void>;
+  enfilerNote: (note: MutationNote) => Promise<void>;
   synchroniser: () => Promise<void>;
   resoudreConflit: (id: string) => void;
 };
@@ -65,6 +72,11 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
   const [file, setFile] = useState<Mutation[]>([]);
   const enCours = useRef(false);
   const fileRef = useRef<Mutation[]>([]);
+
+  const invaliderLivres = useCallback(() => {
+    void qc.invalidateQueries({ queryKey: clesLivres.tout });
+  }, [qc]);
+  const notesSync = useNotesSync(enLigne, invaliderLivres);
 
   useEffect(() => {
     fileRef.current = file;
@@ -121,37 +133,49 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
 
       await sauverFile(restante);
       setFile(restante);
-      void qc.invalidateQueries({ queryKey: clesLivres.tout });
+      invaliderLivres();
     } catch {
       // Réseau/serveur indisponible : on garde la file pour un prochain essai.
     } finally {
       enCours.current = false;
     }
-  }, [qc, t, afficher]);
+  }, [t, afficher, invaliderLivres]);
 
-  // Chargement initial de la file + état réseau, puis abonnement aux
+  // notesSync.charger/lancerSyncNotes/viderFileNotes sont chacune stables
+  // (useCallback à deps minimales dans useNotesSync — voir sa note). On
+  // référence donc ces fonctions individuellement dans les dépendances
+  // ci-dessous, jamais l'objet notesSync entier : celui-ci change d'identité
+  // à chaque mise à jour de fileNotes, ce qui, combiné à des effets qui
+  // appellent justement ces fonctions, boucle indéfiniment.
+  const synchroniserTout = useCallback(async () => {
+    await Promise.all([lancerSync(), notesSync.lancerSyncNotes()]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- notesSync.lancerSyncNotes est stable ; voir la note ci-dessus.
+  }, [lancerSync, notesSync.lancerSyncNotes]);
+
+  // Chargement initial des files + état réseau, puis abonnement aux
   // changements. Si l'app démarre déjà en ligne avec une file non vide (cas
   // navigateur : surChangementReseau n'émet que sur transition, jamais de
   // valeur initiale — contrairement à NetInfo côté natif), il faut
   // déclencher la synchronisation nous-mêmes ici (BL-08).
   useEffect(() => {
     let annule = false;
-    void Promise.all([chargerFile(), lireEtatReseau()]).then(([f, ligne]) => {
+    void Promise.all([chargerFile(), notesSync.charger(), lireEtatReseau()]).then(([f, fn, ligne]) => {
       if (annule) return;
       setFile(f);
       fileRef.current = f;
       setEnLigne(ligne);
-      if (ligne && f.length > 0) void lancerSync();
+      if (ligne && (f.length > 0 || fn.length > 0)) void synchroniserTout();
     });
     const desabonner = surChangementReseau((ligne) => {
       setEnLigne(ligne);
-      if (ligne) void lancerSync();
+      if (ligne) void synchroniserTout();
     });
     return () => {
       annule = true;
       desabonner();
     };
-  }, [lancerSync]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- notesSync.charger est stable ; voir la note plus haut.
+  }, [synchroniserTout, notesSync.charger]);
 
   const enfiler = useCallback(
     async (mutation: Mutation) => {
@@ -171,25 +195,37 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
     void sauverFile(restante);
   }, []);
 
-  /** Vide la file, persistée comprise — utilisé à la déconnexion (BL-09) une fois la synchronisation tentée. */
+  /** Vide les deux files, persistance comprise — utilisé à la déconnexion (BL-09) une fois la synchronisation tentée. */
   const viderFile = useCallback(async () => {
     fileRef.current = [];
     setFile([]);
-    await sauverFile([]);
-  }, []);
+    await Promise.all([sauverFile([]), notesSync.viderFileNotes()]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- notesSync.viderFileNotes est stable ; voir la note plus haut.
+  }, [notesSync.viderFileNotes]);
 
   useEffect(() => {
     definirAccesFileSync({
-      nombreEnAttente: () => fileRef.current.length,
-      synchroniser: lancerSync,
+      // notesSync.fileNotesRef est un ref (identité stable) : sa valeur
+      // courante est lue à l'appel, jamais capturée à la définition.
+      nombreEnAttente: () => fileRef.current.length + notesSync.fileNotesRef.current.length,
+      synchroniser: synchroniserTout,
       purger: viderFile,
     });
     return () => definirAccesFileSync(null);
-  }, [lancerSync, viderFile]);
+  }, [synchroniserTout, viderFile, notesSync.fileNotesRef]);
 
   const valeur = useMemo<ContexteSync>(
-    () => ({ enLigne, file, conflits, enfiler, synchroniser: lancerSync, resoudreConflit }),
-    [enLigne, file, conflits, enfiler, lancerSync, resoudreConflit],
+    () => ({
+      enLigne,
+      file,
+      fileNotes: notesSync.fileNotes,
+      conflits,
+      enfiler,
+      enfilerNote: notesSync.enfilerNote,
+      synchroniser: synchroniserTout,
+      resoudreConflit,
+    }),
+    [enLigne, file, notesSync, conflits, enfiler, synchroniserTout, resoudreConflit],
   );
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;
