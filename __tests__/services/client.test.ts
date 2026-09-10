@@ -74,6 +74,20 @@ describe('requete', () => {
     await expect(requete('/x', { schema, reessais: 0 })).rejects.toBeInstanceOf(ErreurReseau);
   });
 
+  it('ne réessaie pas une écriture POST par défaut (BL-12)', async () => {
+    // POST /books et POST /books/:id/notes n'ont pas de clé d'idempotence côté
+    // API (contrairement à POST /sync, dont l'id de mutation sert de clé) :
+    // un réessai aveugle après une réponse perdue — mais un écrit serveur déjà
+    // réussi — créerait un doublon. On ne réessaie donc jamais un POST sans
+    // que l'appelant l'ait explicitement demandé (comme /sync le fait déjà
+    // pour ses propres raisons, voir services/api/sync.ts).
+    fetchMock
+      .mockResolvedValueOnce(reponse(503, { erreur: 'service_indisponible' }))
+      .mockResolvedValueOnce(reponse(200, { ok: true }));
+    await expect(requete('/x', { schema, methode: 'POST' })).rejects.toMatchObject({ genre: 'reseau' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('retire les écouteurs d’abandon une fois la requête réglée (BL-16)', async () => {
     fetchMock.mockResolvedValueOnce(reponse(200, { ok: true }));
     const controleur = new AbortController();
