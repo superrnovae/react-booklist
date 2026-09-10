@@ -99,6 +99,21 @@ describe('fusionnerFile', () => {
     expect(f2).toHaveLength(1);
     expect(f2[0].id).toBe('m0');
   });
+
+  it('conserve la position chronologique de la mutation fusionnée parmi les autres livres (BL-15)', () => {
+    // livre-a arrive avant livre-b dans la file...
+    const f1 = fusionnerFile([], maj('m1', livre({ id: 'livre-a', titre: 'A v1' })));
+    const f2 = fusionnerFile(f1, maj('m2', livre({ id: 'livre-b', titre: 'B' })));
+    expect(f2.map((m) => livreVise(m))).toEqual(['livre-a', 'livre-b']);
+
+    // ...une deuxième modification de livre-a doit fusionner en place, pas
+    // repousser la mutation en fin de file derrière livre-b : l'ordre de
+    // départ au serveur ne doit pas dépendre de quel livre a été retouché
+    // en dernier hors ligne.
+    const f3 = fusionnerFile(f2, maj('m3', livre({ id: 'livre-a', titre: 'A v2' })));
+    expect(f3.map((m) => livreVise(m))).toEqual(['livre-a', 'livre-b']);
+    expect((f3[0] as MutationMaj).livre.titre).toBe('A v2');
+  });
 });
 
 describe('estLivreLocal', () => {
