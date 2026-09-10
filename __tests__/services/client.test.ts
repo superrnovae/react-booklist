@@ -73,4 +73,18 @@ describe('requete', () => {
     fetchMock.mockRejectedValue(new TypeError('Network down'));
     await expect(requete('/x', { schema, reessais: 0 })).rejects.toBeInstanceOf(ErreurReseau);
   });
+
+  it('retire les écouteurs d’abandon une fois la requête réglée (BL-16)', async () => {
+    fetchMock.mockResolvedValueOnce(reponse(200, { ok: true }));
+    const controleur = new AbortController();
+    const retirerSpy = jest.spyOn(AbortSignal.prototype, 'removeEventListener');
+
+    await requete('/x', { schema, signal: controleur.signal });
+
+    // Un retrait pour le signal externe, un pour celui du minuteur interne —
+    // sans ça, les deux restent attachés indéfiniment pour toute requête qui
+    // n'abandonne jamais (le cas le plus fréquent).
+    expect(retirerSpy.mock.calls.filter(([type]) => type === 'abort').length).toBeGreaterThanOrEqual(2);
+    retirerSpy.mockRestore();
+  });
 });
