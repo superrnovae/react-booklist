@@ -5,7 +5,7 @@
  * L'authentification est branchée via un fournisseur injectable (Lot 4) : le
  * client reste utilisable sans jeton pour les paliers 10 → 16.
  */
-import { ErreurAuth, ErreurReseau, ErreurValidation } from '@/domain/erreurs';
+import { ErreurReseau, ErreurValidation } from '@/domain/erreurs';
 import type { z } from 'zod';
 import { BACKOFF_BASE_MS, DELAI_EXPIRATION_MS, REESSAIS_MAX, URL_BASE } from '../config';
 import { erreurDepuisReponse } from './erreurs-http';
@@ -38,14 +38,29 @@ function attendre(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function fusionnerSignaux(externe: AbortSignal | undefined, delai: AbortSignal): AbortSignal {
-  if (!externe) return delai;
+/**
+ * Combine le signal d'abandon de l'appelant et celui du minuteur d'expiration.
+ * Retourne aussi `nettoyer`, à appeler une fois la requête réglée : sans ça,
+ * les deux écouteurs restent attachés à `externe`/`delai` même quand ni l'un
+ * ni l'autre n'abandonne jamais — le cas le plus fréquent.
+ */
+function fusionnerSignaux(
+  externe: AbortSignal | undefined,
+  delai: AbortSignal,
+): { signal: AbortSignal; nettoyer: () => void } {
+  if (!externe) return { signal: delai, nettoyer: () => {} };
   const ctrl = new AbortController();
   const relayer = () => ctrl.abort();
   if (externe.aborted) ctrl.abort();
-  externe.addEventListener('abort', relayer);
-  delai.addEventListener('abort', relayer);
-  return ctrl.signal;
+  externe.addEventListener('abort', relayer, { once: true });
+  delai.addEventListener('abort', relayer, { once: true });
+  return {
+    signal: ctrl.signal,
+    nettoyer: () => {
+      externe.removeEventListener('abort', relayer);
+      delai.removeEventListener('abort', relayer);
+    },
+  };
 }
 
 async function executer<T>(chemin: string, options: OptionsRequete<T>, rejeuAuth: boolean): Promise<T> {
@@ -60,6 +75,7 @@ async function executer<T>(chemin: string, options: OptionsRequete<T>, rejeuAuth
 
   const minuteur = new AbortController();
   const idDelai = setTimeout(() => minuteur.abort(), delaiMs);
+  const { signal: signalFusionne, nettoyer } = fusionnerSignaux(signal, minuteur.signal);
 
   let reponse: Response;
   try {
@@ -67,7 +83,7 @@ async function executer<T>(chemin: string, options: OptionsRequete<T>, rejeuAuth
       method: methode,
       headers: enteteFinales,
       body: corps !== undefined ? JSON.stringify(corps) : undefined,
-      signal: fusionnerSignaux(signal, minuteur.signal),
+      signal: signalFusionne,
     });
   } catch (e) {
     if (signal?.aborted) throw e; // annulation volontaire : laisser remonter
@@ -76,6 +92,7 @@ async function executer<T>(chemin: string, options: OptionsRequete<T>, rejeuAuth
     );
   } finally {
     clearTimeout(idDelai);
+    nettoyer();
   }
 
   if (reponse.status === 204) return undefined as T;
@@ -110,8 +127,10 @@ export async function requete<T>(chemin: string, options: OptionsRequete<T> = {}
     try {
       return await executer(chemin, options, false);
     } catch (e) {
-      const reessayable =
-        e instanceof ErreurReseau && e.reessayable && !(e instanceof ErreurAuth);
+      // ErreurAuth hérite de ErreurApplicative, pas de ErreurReseau (voir
+      // domain/erreurs.ts) : une 401/403 ne peut donc jamais satisfaire ce
+      // test, une erreur d'authentification n'est déjà jamais réessayée ici.
+      const reessayable = e instanceof ErreurReseau && e.reessayable;
       if (!reessayable || tentative >= reessais || options.signal?.aborted) throw e;
       await attendre(BACKOFF_BASE_MS * 2 ** tentative);
       tentative += 1;
