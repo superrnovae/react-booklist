@@ -105,6 +105,12 @@ const fr = {
     garderMien: 'Garder ma valeur',
     garderServeur: 'Garder le serveur',
     appliquer: 'Appliquer la fusion',
+    introSuppression:
+      'Vous avez supprimé cet ouvrage hors ligne, mais il a été modifié côté serveur entre-temps.',
+    confirmerSuppression: 'Confirmer la suppression',
+    conserverServeur: 'Conserver la version serveur',
+    suppressionConfirmee: 'Ouvrage supprimé.',
+    suppressionAbandonnee: 'Suppression abandonnée : la version serveur est conservée.',
   },
   stats: {
     titre: 'Tableau de bord',

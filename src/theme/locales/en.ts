@@ -107,6 +107,11 @@ const en: Traductions = {
     garderMien: 'Keep mine',
     garderServeur: 'Keep server',
     appliquer: 'Apply merge',
+    introSuppression: 'You deleted this book offline, but it was changed on the server meanwhile.',
+    confirmerSuppression: 'Confirm deletion',
+    conserverServeur: 'Keep the server version',
+    suppressionConfirmee: 'Book deleted.',
+    suppressionAbandonnee: 'Deletion cancelled: the server version is kept.',
   },
   stats: {
     titre: 'Dashboard',
