@@ -112,18 +112,28 @@ export function FournisseurSync({ children }: { children: ReactNode }) {
     }
   }, [qc, t, afficher]);
 
-  // Chargement initial de la file + état réseau, puis abonnement aux changements.
+  // Chargement initial de la file + état réseau, puis abonnement aux
+  // changements. Si l'app démarre déjà en ligne avec une file non vide (cas
+  // navigateur : surChangementReseau n'émet que sur transition, jamais de
+  // valeur initiale — contrairement à NetInfo côté natif), il faut
+  // déclencher la synchronisation nous-mêmes ici (BL-08).
   useEffect(() => {
-    void chargerFile().then((f) => {
+    let annule = false;
+    void Promise.all([chargerFile(), lireEtatReseau()]).then(([f, ligne]) => {
+      if (annule) return;
       setFile(f);
       fileRef.current = f;
+      setEnLigne(ligne);
+      if (ligne && f.length > 0) void lancerSync();
     });
-    void lireEtatReseau().then(setEnLigne);
     const desabonner = surChangementReseau((ligne) => {
       setEnLigne(ligne);
       if (ligne) void lancerSync();
     });
-    return desabonner;
+    return () => {
+      annule = true;
+      desabonner();
+    };
   }, [lancerSync]);
 
   const enfiler = useCallback(

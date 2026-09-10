@@ -155,12 +155,10 @@ describe('FournisseurSync — motif d’un rejet de validation (BL-03)', () => {
       serveurLe: '2026-01-01T00:05:00.000Z',
     });
 
+    // Depuis BL-08, une file en attente part seule au montage si l'app est
+    // déjà en ligne — pas besoin d'appeler synchroniser() explicitement ici.
     const { result, unmount } = await renderHook(() => useSync(), { wrapper: enveloppe() });
-    await waitFor(() => expect(result.current.file).toHaveLength(1));
-
-    await act(async () => {
-      await result.current.synchroniser();
-    });
+    await waitFor(() => expect(result.current.file).toHaveLength(0));
 
     // La mutation, invalide côté serveur, est bien retirée...
     expect(result.current.file).toHaveLength(0);
@@ -193,6 +191,30 @@ describe('FournisseurSync — motif d’un rejet de validation (BL-03)', () => {
     // donc pas de snackbar de rejet affiché.
     expect(result.current.file).toHaveLength(1);
     expect(mockAfficher).not.toHaveBeenCalled();
+    unmount();
+  });
+});
+
+describe('FournisseurSync — synchronisation au démarrage (BL-08)', () => {
+  it('une file en attente part seule si l’app démarre déjà en ligne', async () => {
+    await sauverFile([mutationModifiee]);
+
+    synchroniserMock.mockResolvedValue({
+      resultats: [{ id: 'm1', statut: 'ok', livre: livre({ version: 2 }) }],
+      resume: { total: 1, ok: 1, conflits: 0, erreurs: 0 },
+      serveurLe: '2026-01-01T00:05:00.000Z',
+    });
+
+    // lireEtatReseau est mocké pour résoudre `true` (en ligne) — voir le
+    // mock de '@/services/reseau' en tête de fichier. Aucun appel explicite
+    // à synchroniser() ici : c'est le montage seul qui doit déclencher
+    // l'envoi, sans attendre une transition réseau qui n'aura jamais lieu
+    // sur navigateur pour un état déjà en ligne au démarrage.
+    const { result, unmount } = await renderHook(() => useSync(), { wrapper: enveloppe() });
+
+    await waitFor(() => expect(synchroniserMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.file).toHaveLength(0));
+    expect(await chargerFile()).toHaveLength(0);
     unmount();
   });
 });
