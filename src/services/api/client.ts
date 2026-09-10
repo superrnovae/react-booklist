@@ -118,9 +118,20 @@ async function executer<T>(chemin: string, options: OptionsRequete<T>, rejeuAuth
   throw erreurDepuisReponse(reponse.status, donnees);
 }
 
-/** Point d'entrée unique. Gère les réessais 503/réseau avec back-off exponentiel. */
+/**
+ * Point d'entrée unique. Gère les réessais 503/réseau avec back-off exponentiel.
+ *
+ * Un POST n'est jamais réessayé par défaut (BL-12) : `POST /books` et
+ * `POST /books/:id/notes` n'ont aucune clé d'idempotence côté API — si la
+ * requête a réellement abouti côté serveur mais que la réponse se perd (vraie
+ * coupure réseau, pas le mode chaos qui répond 503 avant `next()`), un
+ * réessai aveugle créerait un doublon. `POST /sync`, lui, porte sa propre clé
+ * (l'id de mutation) et gère ses réessais autrement (voir services/api/sync.ts,
+ * `reessais: 0` explicite + rejeu contrôlé par la file). Un appelant peut
+ * toujours forcer un nombre de réessais via `options.reessais`.
+ */
 export async function requete<T>(chemin: string, options: OptionsRequete<T> = {}): Promise<T> {
-  const reessais = options.reessais ?? REESSAIS_MAX;
+  const reessais = options.reessais ?? (options.methode === 'POST' ? 0 : REESSAIS_MAX);
   let tentative = 0;
 
   for (;;) {
