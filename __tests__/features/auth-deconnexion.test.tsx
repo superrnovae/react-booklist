@@ -27,6 +27,14 @@ const mockDemanderConfirmation = jest.fn();
 jest.mock('@/features/ui/Confirmation', () => ({
   useConfirmation: () => ({ demanderConfirmation: mockDemanderConfirmation }),
 }));
+// BL-17 : sur un poste partagé, un échec de purge ne doit ni laisser
+// deconnexion() rejeter en silence (l'appelant l'invoque avec `void`, voir
+// app/reglages.tsx), ni laisser l'écran affiché comme « connecté ».
+const mockAfficher = jest.fn();
+jest.mock('@/features/ui/Snackbar', () => ({
+  useSnackbar: () => ({ afficher: mockAfficher }),
+  FournisseurSnackbar: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
@@ -67,6 +75,7 @@ beforeEach(() => {
   accederFileSyncMock.mockReset();
   viderCachePersistantMock.mockReset();
   mockDemanderConfirmation.mockReset();
+  mockAfficher.mockReset();
 });
 
 describe('FournisseurAuthentification — déconnexion (BL-09)', () => {
@@ -129,5 +138,28 @@ describe('FournisseurAuthentification — déconnexion (BL-09)', () => {
     expect(purger).toHaveBeenCalledTimes(1);
     expect(viderCachePersistantMock).toHaveBeenCalledTimes(1);
     expect(result.current.statut).toBe('deconnecte');
+  });
+
+  it("un échec de purge n'empêche pas la déconnexion visible et prévient le libraire (BL-17)", async () => {
+    const purger = jest.fn(async () => {
+      throw new Error('stockage indisponible');
+    });
+    accederFileSyncMock.mockReturnValue({
+      nombreEnAttente: () => 0,
+      synchroniser: jest.fn(async () => {}),
+      purger,
+    });
+
+    const result = await connecte();
+
+    // deconnexion() ne doit jamais rejeter : app/reglages.tsx l'invoque avec
+    // `void`, une rejection non gérée laisserait l'écran affiché "connecté"
+    // avec un jeton déjà effacé — un état incohérent sur un poste partagé.
+    await act(async () => {
+      await expect(result.current.deconnexion()).resolves.toBeUndefined();
+    });
+
+    expect(result.current.statut).toBe('deconnecte');
+    expect(mockAfficher).toHaveBeenCalledTimes(1);
   });
 });

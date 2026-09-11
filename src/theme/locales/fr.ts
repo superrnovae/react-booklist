@@ -101,6 +101,8 @@ const fr = {
       '{{count}} modification en attente n’a pas pu être envoyée au serveur. Elle sera perdue si vous vous déconnectez maintenant.',
     deconnexionMessage_other:
       '{{count}} modifications en attente n’ont pas pu être envoyées au serveur. Elles seront perdues si vous vous déconnectez maintenant.',
+    purgeEchouee:
+      'Déconnecté, mais la file locale n’a pas pu être effacée sur cet appareil. Prévenez un responsable avant de laisser ce poste à un autre libraire.',
   },
   conflit: {
     titre: 'Conflit de version',
