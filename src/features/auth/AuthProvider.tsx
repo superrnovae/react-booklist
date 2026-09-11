@@ -6,6 +6,7 @@
 import { ErreurAuth } from '@/domain/erreurs';
 import type { Role, Utilisateur } from '@/domain/types';
 import { useConfirmation } from '@/features/ui/Confirmation';
+import { useSnackbar } from '@/features/ui/Snackbar';
 import { viderCachePersistant } from '@/features/query/persister';
 import { accederFileSync } from '@/features/sync/SyncProvider';
 import { connexion as apiConnexion, profil } from '@/services/api/auth';
@@ -45,6 +46,7 @@ export function FournisseurAuthentification({ children }: { children: ReactNode 
   const qc = useQueryClient();
   const { t } = useI18n();
   const { demanderConfirmation } = useConfirmation();
+  const { afficher } = useSnackbar();
   const [etat, setEtat] = useState<Etat>({ statut: 'inconnu', utilisateur: null, authRequise: false });
 
   useEffect(() => {
@@ -110,14 +112,25 @@ export function FournisseurAuthentification({ children }: { children: ReactNode 
           if (!continuer) return; // reste connecté : rien n'est perdu
         }
 
-        await fermerSession();
-        await acces?.purger();
-        qc.clear();
-        await viderCachePersistant();
-        setEtat({ statut: 'deconnecte', utilisateur: null, authRequise: true });
+        // BL-17 : sur un poste partagé, ne jamais laisser un échec de purge
+        // (stockage indisponible, quota dépassé) faire rejeter deconnexion()
+        // en silence — l'appelant (app/reglages.tsx) l'invoque avec `void`,
+        // et une rejection non gérée laisserait l'écran affiché « connecté »
+        // alors que le jeton est déjà effacé, la file locale du libraire
+        // précédent restant en place pour la session suivante.
+        try {
+          await fermerSession();
+          await acces?.purger();
+          qc.clear();
+          await viderCachePersistant();
+        } catch {
+          afficher(t('auth.purgeEchouee'));
+        } finally {
+          setEtat({ statut: 'deconnecte', utilisateur: null, authRequise: true });
+        }
       },
     };
-  }, [etat, qc, t, demanderConfirmation]);
+  }, [etat, qc, t, demanderConfirmation, afficher]);
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;
 }

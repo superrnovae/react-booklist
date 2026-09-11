@@ -103,6 +103,8 @@ const en: Traductions = {
       '{{count}} pending change could not be sent to the server. It will be lost if you sign out now.',
     deconnexionMessage_other:
       '{{count}} pending changes could not be sent to the server. They will be lost if you sign out now.',
+    purgeEchouee:
+      'Signed out, but the local queue could not be cleared on this device. Tell a manager before handing this terminal to another bookseller.',
   },
   conflit: {
     titre: 'Version conflict',
