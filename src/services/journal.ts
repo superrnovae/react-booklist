@@ -15,6 +15,13 @@ const CLE_JOURNAL = 'booklist.journal';
 
 let journal: EntreeJournal[] = [];
 let chargement: Promise<void> | null = null;
+// Vrai dès le premier consigner()/viderJournal() de la session. Empêche la
+// lecture de démarrage — asynchrone, lancée par le premier abonné — d'écraser
+// des entrées déjà ajoutées entre-temps : le stockage ne représente que ce
+// qui existait AVANT cette session, jamais ce qui s'est passé depuis. Sans
+// cette garde, consigner() une erreur avant que le chargement initial n'ait
+// eu le temps de résoudre la ferait disparaître dès qu'il résout.
+let ecritDepuisDemarrage = false;
 const abonnes = new Set<(journal: EntreeJournal[]) => void>();
 
 function notifier(): void {
@@ -24,6 +31,7 @@ function notifier(): void {
 function assurerChargement(): Promise<void> {
   if (!chargement) {
     chargement = lireJson<EntreeJournal[]>(CLE_JOURNAL).then((j) => {
+      if (ecritDepuisDemarrage) return;
       journal = j ?? [];
       notifier();
     });
@@ -57,6 +65,7 @@ export function consigner(
 
   consoleDuNiveau(niveau)(`[${entree.horodatage}] ${niveau.toUpperCase()} — ${message}`, options.contexte ?? '', options.erreur ?? '');
 
+  ecritDepuisDemarrage = true;
   journal = ajouterEntree(journal, entree);
   notifier();
   void ecrireJson(CLE_JOURNAL, journal);
@@ -69,6 +78,7 @@ export async function journalRecent(): Promise<EntreeJournal[]> {
 }
 
 export function viderJournal(): void {
+  ecritDepuisDemarrage = true;
   journal = [];
   notifier();
   void ecrireJson(CLE_JOURNAL, []);
@@ -87,5 +97,6 @@ export function surJournal(cb: (journal: EntreeJournal[]) => void): () => void {
 export function _reinitialiserPourTests(): void {
   journal = [];
   chargement = null;
+  ecritDepuisDemarrage = false;
   abonnes.clear();
 }

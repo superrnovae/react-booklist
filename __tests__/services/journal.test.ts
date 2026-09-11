@@ -69,6 +69,24 @@ describe('journal', () => {
     expect(await AsyncStorage.getItem(CLE_JOURNAL)).toBe('[]');
   });
 
+  it("une entrée consignée avant la fin du chargement initial n'est pas écrasée quand ce chargement résout", async () => {
+    // Le premier abonné déclenche une lecture asynchrone du stockage
+    // (assurerChargement). Si consigner() est appelé avant que cette
+    // lecture ait résolu — le cas du tout premier appel d'une session,
+    // typiquement une erreur survenant très tôt au démarrage — le résultat
+    // de cette lecture ne doit pas écraser l'entrée déjà ajoutée entre-temps.
+    surJournal(() => {});
+    consigner('erreur', 'échec précoce, avant la fin du chargement');
+
+    // Laisse la lecture asynchrone (et sa notification) avoir toutes les
+    // chances de s'exécuter.
+    await new Promise((r) => setTimeout(r, 10));
+
+    const journal = await journalRecent();
+    expect(journal).toHaveLength(1);
+    expect(journal[0].message).toBe('échec précoce, avant la fin du chargement');
+  });
+
   it('surJournal() notifie les abonnés à chaque nouvelle entrée, plus après désabonnement', () => {
     const rappel = jest.fn();
     const desabonner = surJournal(rappel);
