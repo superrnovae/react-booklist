@@ -25,12 +25,16 @@ import { expect, request as requetePw, test, type APIRequestContext, type Page }
  *   cd api-books-v2
  *   $env:AUTH_REQUIRED='true'; $env:ACCESS_TOKEN_TTL='20s'; node src/server.js
  *
- * Le mode chaos (latence + 30 % d'échecs) n'est volontairement PAS activé
- * ici : sur un test automatisé, un taux d'échec de 30 % produirait une
- * flakiness qui n'a rien à voir avec une vraie régression. Le comportement
- * 503/réessai est déjà couvert par __tests__/services/client.test.ts.
- * Vérifier les conditions chaos complètes (npm run final) manuellement
- * avant la recette réelle devant le jury.
+ * Le mode chaos (latence + 30 % d'échecs, `npm run final`) n'est pas requis
+ * pour ce fichier : le comportement 503/réessai du client est déjà couvert,
+ * déterministe, par __tests__/services/client.test.ts. Mais il PEUT être
+ * activé en plus de l'auth ci-dessus pour une preuve live complète — lancer
+ * alors avec `--retries=4` (ou plus), un taux d'échec de 30 % par requête
+ * rendant un passage sans aucun échec improbable sur l'ensemble des appels
+ * directs de ce fichier ; ce n'est pas une régression tant que ça finit par
+ * passer. modifierCoteServeur() se reconnecte juste avant son action plutôt
+ * que de réutiliser le jeton obtenu en tout début de scénario, justement
+ * pour rester correct sous la latence chaos avec le TTL raccourci ci-dessus.
  */
 
 const API = 'http://localhost:3000';
@@ -90,9 +94,22 @@ async function modifierDepuisListe(page: Page, cible: Livre, nouveauTitre: strin
   await page.getByTestId('soumettre-livre').click();
 }
 
-async function modifierCoteServeur(api: APIRequestContext, jeton: string, cible: Livre, titre: string) {
+/**
+ * Le "formateur" agit ici après plusieurs étapes navigateur (chacune
+ * ralentie par la latence chaos) qui peuvent, cumulées, dépasser le TTL
+ * raccourci du jeton d'accès obtenu en tout début de scénario par
+ * connexionFormateur() — un jeton expiré, mais un vrai 401, pas un défaut
+ * applicatif. Un formateur réel se reconnecterait avant d'agir plutôt que
+ * de garder un jeton minuté depuis le début du test : on fait de même ici,
+ * avec une reconnexion juste avant l'action plutôt qu'un jeton réutilisé.
+ */
+async function modifierCoteServeur(api: APIRequestContext, cible: Livre, titre: string) {
+  const connexion = await api.post('/auth/login', { data: EDITEUR });
+  expect(connexion.ok()).toBeTruthy();
+  const { accessToken } = await connexion.json();
+
   const reponse = await api.put(`/books/${cible.id}`, {
-    headers: { Authorization: `Bearer ${jeton}`, 'If-Match': String(cible.version) },
+    headers: { Authorization: `Bearer ${accessToken}`, 'If-Match': String(cible.version) },
     data: {
       titre,
       auteur: cible.auteur,
@@ -144,7 +161,7 @@ test.describe('Scénario de recette — chapitre 4.6', () => {
 
     // --- 6) Le "formateur" modifie le MÊME ouvrage côté serveur, pendant
     //         que le libraire est hors ligne — version encore inchangée.
-    await modifierCoteServeur(api, jetonFormateur, cible, `${cible.titre} (édité par le formateur)`);
+    await modifierCoteServeur(api, cible, `${cible.titre} (édité par le formateur)`);
 
     // --- 7) Attendre l'expiration du jeton d'accès pendant que le
     //         libraire est encore hors ligne (voir le TTL raccourci dans
@@ -162,9 +179,15 @@ test.describe('Scénario de recette — chapitre 4.6', () => {
     // On est de nouveau en ligne à ce stade : la recherche serveur peut
     // être utilisée pour le retrouver, où qu'il tombe alphabétiquement
     // parmi les 500 ouvrages (rien ne garantit qu'il soit sur la 1ère page).
+    // Locator scopé sur la carte : une couverture absente (couverture: null,
+    // /covers/<id>.svg non servi par l'API — voir docs/API-ECARTS.md) affiche
+    // un repli qui répète aussi le titre en texte (CouvertureImage.tsx) ;
+    // getByText(titreCree) seul compterait ce repli en plus de la carte.
     await page.goto('/');
     await page.getByTestId('recherche').fill(titreCree);
-    await expect(page.getByText(titreCree)).toHaveCount(1, { timeout: 15_000 });
+    await expect(page.getByTestId('livre-carte').filter({ hasText: titreCree })).toHaveCount(1, {
+      timeout: 15_000,
+    });
 
     // --- 9) Le conflit sur l'ouvrage cible est détecté et affiché.
     await page.goto('/conflits');
@@ -193,7 +216,7 @@ test.describe('Scénario de recette — chapitre 4.6', () => {
     await context.setOffline(true);
     await modifierDepuisListe(page, cible, `${cible.titre} (BL-02)`);
 
-    await modifierCoteServeur(api, jetonFormateur, cible, `${cible.titre} (formateur, BL-02)`);
+    await modifierCoteServeur(api, cible, `${cible.titre} (formateur, BL-02)`);
 
     await context.setOffline(false);
     await page.goto('/conflits');
