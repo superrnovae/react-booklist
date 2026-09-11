@@ -139,6 +139,21 @@ const en: Traductions = {
     langue: 'Language',
     francais: 'French',
     anglais: 'English',
+    journal: 'Technical log',
+  },
+  journal: {
+    titre: 'Log',
+    vider: 'Clear log',
+    viderTitre: 'Clear log',
+    viderMessage: 'This local log will be permanently erased on this device.',
+    videTotal: 'No event logged yet.',
+    videFiltre: 'No event at this level.',
+    niveau: {
+      tous: 'All',
+      info: 'Info',
+      avertissement: 'Warning',
+      erreur: 'Error',
+    },
   },
 };
 

@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Bouton, Carte, Texte } from '@/components';
@@ -43,6 +43,7 @@ function Choix<T extends string>({
 }
 
 export default function EcranReglages() {
+  const router = useRouter();
   const { mode, definirMode } = useTheme();
   const { t, langue } = useI18n();
   const { utilisateur, authRequise, deconnexion } = useAuth();
@@ -88,6 +89,17 @@ export default function EcranReglages() {
             { valeur: 'fr', libelle: t('reglages.francais') },
             { valeur: 'en', libelle: t('reglages.anglais') },
           ]}
+        />
+      </Carte>
+
+      <Carte style={styles.carte}>
+        <Texte variante="sousTitre">{t('reglages.journal')}</Texte>
+        <Bouton
+          titre={t('journal.titre')}
+          onPress={() => router.push('/journal')}
+          variante="secondaire"
+          icone="journal"
+          testID="ouvrir-journal"
         />
       </Carte>
     </ScrollView>

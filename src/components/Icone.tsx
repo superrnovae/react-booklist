@@ -18,6 +18,7 @@ export type IconeNom =
   | 'fermer'
   | 'grille'
   | 'horloge'
+  | 'journal'
   | 'liste'
   | 'modifier'
   | 'noter'
@@ -40,6 +41,7 @@ const GLYPHES: Record<IconeNom, string> = {
   fermer: '×',
   grille: '▦',
   horloge: '◷',
+  journal: '🗎',
   liste: '☰',
   modifier: '✎',
   noter: '★',

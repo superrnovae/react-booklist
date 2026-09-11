@@ -138,6 +138,21 @@ const fr = {
     langue: 'Langue',
     francais: 'Français',
     anglais: 'Anglais',
+    journal: 'Journal technique',
+  },
+  journal: {
+    titre: 'Journal',
+    vider: 'Vider le journal',
+    viderTitre: 'Vider le journal',
+    viderMessage: 'Ce journal local sera définitivement effacé sur cet appareil.',
+    videTotal: 'Aucun événement consigné pour le moment.',
+    videFiltre: 'Aucun événement à ce niveau.',
+    niveau: {
+      tous: 'Tous',
+      info: 'Info',
+      avertissement: 'Avertissement',
+      erreur: 'Erreur',
+    },
   },
 };
 
