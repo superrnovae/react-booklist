@@ -6,6 +6,11 @@
  * rendreAvecTheme utilisé par les autres tests de composants), pour le
  * prouver plutôt que le supposer.
  */
+const mockConsigner = jest.fn();
+jest.mock('@/services/journal', () => ({
+  consigner: (...args: unknown[]) => mockConsigner(...args),
+}));
+
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
@@ -21,6 +26,24 @@ const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {}
 afterAll(() => consoleErrorSpy.mockRestore());
 
 describe('<ErrorBoundary /> (BL-10)', () => {
+  beforeEach(() => mockConsigner.mockReset());
+
+  it('consigne l’erreur interceptée via le service de journalisation (§ Lot 5)', async () => {
+    await render(
+      <ErrorBoundary>
+        <ComposantQuiExplose />
+      </ErrorBoundary>,
+    );
+
+    expect(mockConsigner).toHaveBeenCalledTimes(1);
+    const [niveau, message, options] = mockConsigner.mock.calls[0];
+    expect(niveau).toBe('erreur');
+    expect(message).toBe('Erreur interceptée par ErrorBoundary');
+    expect(options.erreur).toBeInstanceOf(Error);
+    expect(options.erreur.message).toBe('Panne simulée');
+    expect(options.contexte).toHaveProperty('pileComposants');
+  });
+
   it('affiche un écran exploitable sans aucun fournisseur de thème', async () => {
     const { getByText, getByRole } = await render(
       <ErrorBoundary>

@@ -6,6 +6,7 @@
  * client reste utilisable sans jeton pour les paliers 10 → 16.
  */
 import { ErreurReseau, ErreurValidation } from '@/domain/erreurs';
+import { consigner } from '@/services/journal';
 import type { z } from 'zod';
 import { BACKOFF_BASE_MS, DELAI_EXPIRATION_MS, REESSAIS_MAX, URL_BASE } from '../config';
 import { erreurDepuisReponse } from './erreurs-http';
@@ -142,7 +143,20 @@ export async function requete<T>(chemin: string, options: OptionsRequete<T> = {}
       // domain/erreurs.ts) : une 401/403 ne peut donc jamais satisfaire ce
       // test, une erreur d'authentification n'est déjà jamais réessayée ici.
       const reessayable = e instanceof ErreurReseau && e.reessayable;
-      if (!reessayable || tentative >= reessais || options.signal?.aborted) throw e;
+      if (!reessayable || tentative >= reessais || options.signal?.aborted) {
+        // § Lot 5 : trace structurée de tout échec réellement remonté à
+        // l'appelant — ni une annulation volontaire, ni un 422 (déjà
+        // affiché champ par champ, pas une panne). ErreurReseau reste un
+        // avertissement (le sujet la prévoit, retentée ou compensée par la
+        // file hors ligne) ; le reste est plus inattendu.
+        if (!options.signal?.aborted && !(e instanceof ErreurValidation)) {
+          consigner(e instanceof ErreurReseau ? 'avertissement' : 'erreur', `Requête ${options.methode ?? 'GET'} ${chemin} en échec`, {
+            erreur: e,
+            contexte: { chemin, methode: options.methode ?? 'GET', tentatives: tentative + 1 },
+          });
+        }
+        throw e;
+      }
       await attendre(BACKOFF_BASE_MS * 2 ** tentative);
       tentative += 1;
     }

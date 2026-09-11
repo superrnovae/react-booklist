@@ -12,6 +12,7 @@ import { ErrorBoundary } from '@/components';
 import { queryClient } from '@/features/query/client';
 import { creerPersister } from '@/features/query/persister';
 import { FournisseurAuthentification, Garde } from '@/features/auth';
+import { demarrerCaptureErreursGlobales } from '@/features/journal';
 import { FournisseurSync, IndicateurSync } from '@/features/sync';
 import { FournisseurConfirmation } from '@/features/ui/Confirmation';
 import { FournisseurSnackbar } from '@/features/ui/Snackbar';
@@ -46,6 +47,11 @@ export default function RootLayout() {
   useEffect(() => {
     restaurerLangue().finally(() => SplashScreen.hideAsync());
   }, []);
+
+  // § Lot 5 : capture les erreurs/rejets de promesse qu'aucun composant n'a
+  // interceptés (hors du filet de l'ErrorBoundary, qui ne voit que les
+  // erreurs de rendu React) et les consigne dans le journal structuré.
+  useEffect(() => demarrerCaptureErreursGlobales(), []);
 
   return (
     <SafeAreaProvider>

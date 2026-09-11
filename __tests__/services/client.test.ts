@@ -1,4 +1,9 @@
-import { ErreurReseau } from '@/domain/erreurs';
+const mockConsigner = jest.fn();
+jest.mock('@/services/journal', () => ({
+  consigner: (...args: unknown[]) => mockConsigner(...args),
+}));
+
+import { ErreurReseau, ErreurValidation } from '@/domain/erreurs';
 import { definirFournisseurAuth, requete, type FournisseurAuth } from '@/services/api/client';
 import { z } from 'zod';
 
@@ -16,6 +21,7 @@ const fetchMock = jest.fn();
 
 beforeEach(() => {
   fetchMock.mockReset();
+  mockConsigner.mockReset();
   definirFournisseurAuth(null);
   globalThis.fetch = fetchMock as unknown as typeof fetch;
 });
@@ -100,5 +106,31 @@ describe('requete', () => {
     // n'abandonne jamais (le cas le plus fréquent).
     expect(retirerSpy.mock.calls.filter(([type]) => type === 'abort').length).toBeGreaterThanOrEqual(2);
     retirerSpy.mockRestore();
+  });
+
+  it('consigne un échec réseau réellement remonté à l’appelant (§ Lot 5)', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Network down'));
+    await expect(requete('/x', { schema, reessais: 0 })).rejects.toBeInstanceOf(ErreurReseau);
+
+    expect(mockConsigner).toHaveBeenCalledTimes(1);
+    const [niveau, message, options] = mockConsigner.mock.calls[0];
+    expect(niveau).toBe('avertissement'); // ErreurReseau : prévue par le sujet, pas une panne inattendue
+    expect(message).toContain('/x');
+    expect(options.erreur).toBeInstanceOf(ErreurReseau);
+  });
+
+  it('ne consigne ni une annulation volontaire ni une 422 (déjà affichée champ par champ)', async () => {
+    const controleur = new AbortController();
+    fetchMock.mockImplementation(() => {
+      controleur.abort();
+      return Promise.reject(new DOMException('Aborted', 'AbortError'));
+    });
+    await expect(requete('/x', { schema, signal: controleur.signal, reessais: 0 })).rejects.toBeDefined();
+    expect(mockConsigner).not.toHaveBeenCalled();
+
+    mockConsigner.mockClear();
+    fetchMock.mockResolvedValue(reponse(422, { erreur: 'validation', champs: { titre: 'x' } }));
+    await expect(requete('/x', { schema, reessais: 0 })).rejects.toBeInstanceOf(ErreurValidation);
+    expect(mockConsigner).not.toHaveBeenCalled();
   });
 });
